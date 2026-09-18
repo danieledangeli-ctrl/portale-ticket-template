@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Portale Ticket</title>
+  <!-- Il foglio di stile: solo aspetto, nessuna logica -->
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <h1>Portale Ticket — assistenza interna</h1>
+    <!-- Qui mostriamo messaggi allo studente/utente: "Caricamento...", errori, conferme.
+         Ha un id perche' il JavaScript deve poterlo trovare. -->
+    <p id="message" class="message"></p>
+  </header>
+
+  <main>
+    <!-- ===== SEZIONE 1: la lista dei ticket ===== -->
+    <section>
+      <h2>Ticket</h2>
+
+      <!-- Filtro per stato: il JavaScript legge il valore scelto e lo manda come ?status=... -->
+      <label for="status-filter">Mostra:</label>
+      <select id="status-filter">
+        <option value="">tutti</option>
+        <option value="aperto">aperti</option>
+        <option value="in_lavorazione">in lavorazione</option>
+        <option value="chiuso">chiusi</option>
+      </select>
+
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Titolo</th>
+            <th>Descrizione</th>
+            <th>Stato</th>
+            <th>Creato il</th>
+          </tr>
+        </thead>
+        <!-- Il corpo della tabella parte VUOTO: le righe le aggiunge il JavaScript
+             dopo aver chiesto i dati all'API. -->
+        <tbody id="ticket-rows">
+        </tbody>
+      </table>
+    </section>
+
+    <!-- ===== SEZIONE 2: il form per creare un ticket ===== -->
+    <section>
+      <h2>Nuovo ticket</h2>
+      <form id="ticket-form">
+        <label for="title">Titolo</label>
+        <input id="title" name="title" type="text" required minlength="3" maxlength="100"
+               placeholder="Es. La stampante del secondo piano non stampa">
+
+        <label for="description">Descrizione</label>
+        <textarea id="description" name="description" rows="3" maxlength="1000"
+                  placeholder="Cosa succede, dove, da quando"></textarea>
+
+        <label for="status">Stato</label>
+        <select id="status" name="status">
+          <option value="aperto">aperto</option>
+          <option value="in_lavorazione">in lavorazione</option>
+          <option value="chiuso">chiuso</option>
+        </select>
+
+        <!-- La chiave NON e' scritta nel codice: la digita chi ha il diritto di scrivere.
+             type="password" la nasconde sullo schermo, ma attenzione: nel tab Network si vede lo stesso. -->
+        <label for="api-key">Chiave API (solo per chi puo' scrivere)</label>
+        <input id="api-key" name="api-key" type="password" autocomplete="off">
+
+        <button type="submit" id="submit-button">Crea ticket</button>
+      </form>
+    </section>
+  </main>
+
+  <footer>
+    <small>ITS D.E.Mo.S. — Laboratorio API + Frontend</small>
+  </footer>
+
+  <!-- Gli script in fondo: cosi' quando partono, la pagina sopra esiste gia'.
+       config.js contiene SOLO l'indirizzo dell'API. app.js contiene la logica. -->
+  <script src="config.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

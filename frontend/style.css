@@ -1,0 +1,89 @@
+/* Aspetto della pagina. Niente da capire qui per il laboratorio: e' solo per non avere una pagina brutta. */
+
+:root {
+  --blue: #065a82;
+  --grey: #64748b;
+  --light: #f0f7fa;
+  --dark: #1e293b;
+  --red: #dc2626;
+  --green: #059669;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: Arial, Helvetica, sans-serif;
+  color: var(--dark);
+  background: #fff;
+}
+
+header {
+  background: var(--blue);
+  color: #fff;
+  padding: 1rem 2rem;
+}
+
+header h1 { margin: 0 0 .5rem; font-size: 1.4rem; }
+
+main {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 1rem 2rem;
+}
+
+section { margin-bottom: 2rem; }
+
+h2 { color: var(--blue); font-size: 1.1rem; }
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: .5rem;
+}
+
+th, td {
+  text-align: left;
+  padding: .5rem;
+  border-bottom: 1px solid #e2e8f0;
+  vertical-align: top;
+}
+
+th { background: var(--light); color: var(--blue); }
+
+tbody tr:hover { background: #f8fafc; }
+
+.status {
+  display: inline-block;
+  padding: .15rem .5rem;
+  border-radius: 999px;
+  font-size: .8rem;
+  color: #fff;
+  background: var(--grey);
+}
+.status-aperto { background: var(--green); }
+.status-in_lavorazione { background: #d97706; }
+.status-chiuso { background: var(--grey); }
+
+form { display: grid; gap: .4rem; max-width: 480px; }
+label { font-weight: bold; font-size: .9rem; margin-top: .5rem; }
+input, textarea, select { padding: .5rem; font: inherit; border: 1px solid #cbd5e1; border-radius: 4px; }
+button {
+  margin-top: 1rem;
+  padding: .6rem 1rem;
+  background: var(--blue);
+  color: #fff;
+  border: 0;
+  border-radius: 4px;
+  font: inherit;
+  cursor: pointer;
+}
+button:disabled { background: var(--grey); cursor: wait; }
+
+/* Il messaggio in alto: la classe cambia in base a cosa e' successo */
+.message { min-height: 1.2em; margin: 0; font-size: .95rem; }
+.message.error { color: #fecaca; font-weight: bold; }
+.message.ok { color: #bbf7d0; }
+.message.loading { color: #b0d4e8; font-style: italic; }
+
+footer { text-align: center; color: var(--grey); padding: 2rem; }
