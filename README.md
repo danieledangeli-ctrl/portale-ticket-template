@@ -93,6 +93,8 @@ Verifica: ricarica la pagina del tuo repository su GitHub → vedi i file aggior
 
 - **"command not found: uvicorn"** → l'installazione non è finita o è fallita. Lancia a mano `pip install -r requirements.txt`.
 - **"Address already in use"** → c'è già un server acceso. Fermalo con `CTRL + C` nel terminale dove gira, oppure chiudi quel terminale.
+- **Vedi una pagina di login di GitHub invece dei dati** → la porta 8000 è impostata su *Private*. Scheda **Ports** in basso,
+  tasto destro sulla riga 8000 → **Port Visibility → Public**. Normalmente è già pubblica: la imposta il devcontainer.
 - **La pagina resta bianca / errore 502** → il server non è partito. Guarda il terminale: l'errore in rosso dice quale riga di codice è sbagliata.
 - **`/tickets` risponde `[]` invece dei tre ticket** → hai cancellato i ticket di esempio. Non è un guasto: `rm tickets.db` e riavvia il server per rifarli comparire.
 - **Copilot Chat**: icona a forma di fumetto in alto a destra. Incolla l'errore e chiedi "spiegami questo errore". Spiegare sì, scrivere il codice al posto tuo no: è un esercizio.

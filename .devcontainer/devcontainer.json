@@ -3,7 +3,7 @@
   "image": "mcr.microsoft.com/devcontainers/python:3.12",
   "forwardPorts": [8000],
   "portsAttributes": {
-    "8000": { "label": "API FastAPI", "onAutoForward": "notify" }
+    "8000": { "label": "API FastAPI", "onAutoForward": "notify", "visibility": "public" }
   },
   "postCreateCommand": "pip install --upgrade pip && pip install -r requirements.txt",
   "customizations": {
