@@ -1,8 +1,9 @@
-# Giorno 2 — Portalo online, e difendilo davvero
+# Giorno 2 — Aprilo al mondo, e difendilo davvero
 
 **Ieri hai chiuso i buchi che stanno nel server.** Oggi il portale esce da questo
-computer: va online, con un indirizzo vero e un repo pubblico. E lì si aprono i due
-buchi che ieri avevamo lasciato stare — perché in locale non facevano male a nessuno.
+computer: prende un indirizzo vero, raggiungibile da fuori, e il tuo codice è su un
+repo pubblico. E lì si aprono i due buchi che ieri avevamo lasciato stare — perché
+finché tutto girava solo da te non facevano male a nessuno.
 
 Stesso metodo di ieri: **attacca → guarda → ripara → riattacca**.
 
@@ -85,7 +86,15 @@ Clicca sulla riga `tickets`. Sono le stesse cose che ieri vedevi in `curl`, ma d
 
 - **Headers** → in alto il metodo (`GET`) e lo status (`200`)
 - **Response** → il JSON esatto che è tornato
-- **Timing** → quanto ci ha messo
+- **Timing** → **quanto ci ha messo**, spezzato in fasi
+
+Guarda il Timing. Sono millisecondi, perché l'API è sulla tua stessa macchina. Tieni a
+mente quel numero: quando un utente dice *"il portale è lento"*, è qui che si guarda
+per primo — e si scopre se è lenta la rete, il server, o il database.
+
+Prova a rendertene conto: nella pagina, cambia il filtro avanti e indietro qualche
+volta guardando il Network. Ogni cambio è **una richiesta nuova**. Una pagina che
+sembra istantanea sta facendo traffico, e ogni riga lì dentro è lavoro per il server.
 
 Ora tieni il Network aperto e **crea una segnalazione** col form. Compare una seconda
 riga: `POST`, status `201`. Clicca su **Request Headers**: c'è `X-API-Key`, e accanto
@@ -164,84 +173,107 @@ che hai appena cambiato.
 
 ---
 
-## Passo 3 — Andare online (75 min)
+## Passo 3 — Il portale esce dal tuo computer (60 min)
 
-Due servizi separati: l'API su **Render**, la pagina su **Netlify**. È come funziona
-davvero, e da qui in poi lavori su indirizzi veri.
+Fino a ora il tuo portale l'hai visto solo tu. Adesso lo rendi raggiungibile **da
+internet**, con un indirizzo vero, e glielo fai aprire a un compagno dal **suo**
+computer.
 
-### 3a. Prima di partire
+### 3a. Le due porte diventano pubbliche
 
-- [ ] `git add -A && git commit -m "XSS riparato" && git push`
-- [ ] Account creati con **Sign up with GitHub** (niente carta): [render.com](https://render.com) e [netlify.com](https://netlify.com)
+Nel pannello **PORTS**, in basso in VS Code, ci sono le due righe: **8000** (l'API) e
+**5500** (la pagina).
 
-### 3b. L'API su Render
+Su ognuna: tasto destro → **Port Visibility** → **Public**.
 
-1. Render → **New → Web Service** → **Connect** al tuo repo (la prima volta autorizzi Render a vedere i tuoi repo)
-2. Compila:
+> Fermati un secondo su cosa hai appena fatto. **Private** vuol dire che quell'indirizzo
+> risponde solo a te, dopo il login su GitHub. **Public** vuol dire che risponde a
+> chiunque abbia il link. Non è un dettaglio di configurazione: è una decisione di
+> sicurezza, e l'hai presa tu adesso.
 
-   | Campo | Valore |
-   |-------|--------|
-   | Name | `portale-ticket-<tuonome>` |
-   | Region | Frankfurt |
-   | Branch | `main` |
-   | Build Command | `pip install -r requirements.txt` |
-   | Start Command | `uvicorn app.main:app --host 0.0.0.0 --port $PORT` |
-   | Instance Type | **Free** |
+### 3b. L'indirizzo vero
 
-3. **Environment Variables** → aggiungi **una sola** variabile:
+Copia dalla colonna **Forwarded Address** l'indirizzo della **5500**. È una cosa tipo:
 
-   | Key | Value |
-   |-----|-------|
-   | `ALLOWED_ORIGINS` | `*` — per ora. La chiudiamo nel pomeriggio |
-
-   > E la chiave? Non serve. Guarda `app/main.py`: la chiave è **scritta lì dentro**.
-   > Finché sta nel codice, una variabile d'ambiente non cambierebbe niente.
-   > Tienilo a mente: è il passo 5.
-
-4. **Deploy Web Service**. Guarda scorrere i log: `pip install`, poi `Uvicorn running`. Due o tre minuti.
-
-Perché `--host 0.0.0.0 --port $PORT`: in locale uvicorn ascolta solo il tuo computer
-sulla 8000. Su un server deve accettare connessioni **da fuori** (`0.0.0.0`) sulla
-porta che decide Render (`$PORT`), non una scelta da te.
-
-**Come verifico**
-
-- In alto c'è il tuo URL, tipo `https://portale-ticket-mario.onrender.com`. Apri `/health` → `{"status":"ok"}`. Apri `/docs`.
-- Da `/docs`: `POST /tickets` senza chiave → **401**. Con la chiave → **201**.
-- **Guarda l'URL: `https://`.** Non l'hai chiesto, te l'ha dato Render. Prova `http://.../health`: ti redirige. Senza HTTPS, quell'header `X-API-Key` che hai visto stamattina nel Network viaggerebbe **in chiaro** sulla rete — il Wi-Fi del bar, quello del laboratorio — e chiunque in mezzo potrebbe leggerlo.
-
-### 3c. La pagina su Netlify
-
-Prima punta la pagina alla **tua** API. In `frontend/config.js`:
-
-```js
-const API_URL = "https://portale-ticket-<tuonome>.onrender.com";
+```
+https://qualcosa-di-tuo-5500.app.github.dev
 ```
 
-Senza barra finale. Salva, commit, push.
+Guardalo bene: comincia per **`https://`**. Non l'hai chiesto, non hai comprato niente,
+te l'ha dato GitHub. E ricordi la chiave che stamattina hai visto in chiaro nel tab
+Network? Senza HTTPS quella viaggerebbe **in chiaro sulla rete** — il Wi-Fi del
+laboratorio, quello del bar — e chiunque in mezzo potrebbe leggerla.
 
-Poi: Netlify → **Add new site → Deploy manually**. Ti serve la cartella `frontend/`
-sul tuo computer: nel Codespace, tasto destro su `frontend` → **Download**. Se scarica
-uno `.zip`, scompattalo. Trascina la cartella nel riquadro di Netlify.
+### 3c. Fallo aprire a qualcun altro
 
-In pochi secondi hai un indirizzo tipo `https://nome-a-caso-123.netlify.app`. Da
-**Site configuration → Change site name** chiamalo `portale-ticket-<tuonome>`.
+Manda il link della 5500 al compagno di fianco. Deve aprirlo **sul suo computer**, non
+sul tuo.
 
-**Come verifico:** apri l'indirizzo Netlify → **il tuo portale è online**. Mandalo a
-qualcuno, si apre davvero.
+**Come verifico:** lui vede il tuo portale, con le **tue** segnalazioni. Fatti creare
+una segnalazione da lui (dagli la chiave) e guardala comparire sul tuo schermo.
 
-### 3d. Il cold start
+> Questo è il momento in cui il tuo esercizio smette di essere un esercizio. C'è un
+> indirizzo, e dall'altra parte c'è qualcuno. Da qui in poi tutto quello che faremo —
+> CORS, la chiave, l'XSS — riguarda **lui**, non te.
 
-Chiudi tutto e vai a pranzo. Alla ripresa, riapri la tua pagina: ci mette
-**20–40 secondi** a caricare la prima volta.
+### 3d. E quando lo spegni?
 
-Non è rotta. Il piano gratuito di Render **spegne** il servizio quando nessuno lo usa,
-e lo riaccende alla prima richiesta. È il primo fenomeno di performance che incontri,
-ed è quello che l'utente vede come "il sito è lento". Annotalo: serve al passo 6.
+Chiudi la scheda del Codespace e riapri il link dopo qualche minuto: non risponde più.
+Il Codespace si **ferma da solo** dopo mezz'ora che non lo usi.
 
-> Stessa ragione per cui il tuo database si svuota: su Render free il disco non è
-> permanente, a ogni riavvio i dati ripartono da quelli di esempio. Per il laboratorio
-> va bene. Per un portale vero servirebbe un database gestito.
+Un portale vero non può spegnersi quando il programmatore chiude il portatile.
+
+**Come verifico:** hai l'indirizzo `https://` della tua pagina, un compagno l'ha aperto
+dal suo computer, e hai visto che quell'indirizzo non vive per sempre.
+
+---
+
+### 3e. Come sarebbe in produzione (si legge insieme, 15 min)
+
+> **Qui non si fa niente: si guarda.** Il docente lo mostra sul suo schermo. Non
+> pubblicherete il vostro portale oggi, ma dovete sapere cos'è la cosa che non state
+> facendo — perché è la metà del mestiere, e perché spiega cinque scelte che avete già
+> preso senza accorgervene.
+
+**Lo stesso codice gira in posti diversi.** Di solito almeno due, spesso tre:
+
+| Ambiente | Dov'è | A cosa serve |
+|----------|-------|--------------|
+| **Sviluppo** | il tuo Codespace | ci lavori, rompi, riprovi. Se lo butti giù non se ne accorge nessuno |
+| **Staging** | un server uguale a quello vero | si prova la versione nuova prima di darla agli utenti |
+| **Produzione** | un server sempre acceso | ci sono gli utenti veri e i dati veri. Qui non si sperimenta |
+
+**La cosa importante: il codice è lo stesso in tutti e tre.** Quello che cambia è la
+**configurazione**. Ed è esattamente per questo che oggi avete tolto la chiave dal
+codice e l'avete messa in un file a parte, e che l'indirizzo dell'API sta in
+`config.js` e non sparso in `app.js`.
+
+| | Sul tuo Codespace | In produzione |
+|---|---|---|
+| La chiave | nel file `.env`, che non entra nel repo | nel pannello del servizio, che la tiene cifrata. **Non esiste in nessun file** |
+| `ALLOWED_ORIGINS` | l'indirizzo della tua 5500 | l'indirizzo vero del sito, e solo quello |
+| Il certificato HTTPS | te lo dà GitHub | te lo dà il servizio, e si rinnova da solo |
+| Il database | un file sul disco del container | un database gestito, con i **backup**. Mai un file dentro l'applicazione |
+| Chi lo spegne | tu, chiudendo il portatile | nessuno. Gira e basta |
+
+**Le protezioni che si aggiungono passando in produzione:**
+
+1. **I segreti escono da ogni file.** Nel pannello del servizio, scritti una volta e mai più letti da nessuno — nemmeno da chi li ha messi. Se servisse cambiarli, si cambia lì, senza toccare il codice.
+2. **CORS si chiude sull'indirizzo vero.** Niente `*`, mai.
+3. **HTTPS è obbligatorio**, e chi arriva in `http://` viene rediretto.
+4. **I log dicono chi ha fatto cosa e quando.** Quando qualcosa va storto alle tre di notte, sono l'unica cosa che hai.
+5. **Il database sta fuori dall'applicazione**, e ha i backup. Un disco dentro un container si azzera a ogni riavvio.
+
+**E una cosa che costa e si paga:** un server sempre acceso costa. Sui piani gratuiti
+viene spento quando nessuno lo usa, e la prima richiesta dopo lo spegnimento aspetta
+che si riaccenda — venti, quaranta secondi. Si chiama **cold start**, ed è la prima
+cosa che l'utente chiama "il sito è lento".
+
+> **Questa non è teoria.** L'API che avete usato ieri dai notebook — quella vera, con
+> otto segnalazioni dentro — è esattamente così: gira su un server, la chiave sta nel
+> pannello e non in un file, e se non la chiamate da un po' la prima risposta arriva
+> tardi. Il docente ve la mostra adesso: il pannello, la variabile d'ambiente, i log, e
+> il cold start cronometrato.
 
 ---
 
@@ -249,8 +281,9 @@ ed è quello che l'utente vede come "il sito è lento". Annotalo: serve al passo
 
 ## Passo 4 — CORS: il browser che blocca (60 min)
 
-Stamattina tutto ha funzionato perché `ALLOWED_ORIGINS` è `*`. Adesso vediamo cosa c'è
-sotto.
+Stamattina tutto ha funzionato perché `ALLOWED_ORIGINS` vale `*`. Adesso vediamo cosa
+c'è sotto — e attenzione, **non è un esercizio finto**: la tua pagina e la tua API
+stanno davvero su due indirizzi diversi.
 
 ### 4a. Cos'è un'origine
 
@@ -258,68 +291,106 @@ Il browser identifica ogni pagina con la sua **origine** = schema + host + porta
 
 | URL | Origine |
 |-----|---------|
-| `https://portale-ticket-mario.netlify.app/index.html` | `https://portale-ticket-mario.netlify.app` |
-| `https://portale-ticket-mario.onrender.com/tickets` | `https://portale-ticket-mario.onrender.com` ← **diversa** |
+| `https://qualcosa-di-tuo-5500.app.github.dev/index.html` | `https://qualcosa-di-tuo-5500.app.github.dev` |
+| `https://qualcosa-di-tuo-8000.app.github.dev/tickets` | `https://qualcosa-di-tuo-8000.app.github.dev` ← **diversa** |
 
-La tua pagina e la tua API sono **sempre** su origini diverse. È la situazione normale,
-non un errore di impostazione.
+Sono due host diversi: `-5500` e `-8000`. La tua pagina e la tua API sono **sempre** su
+origini diverse — il frontend da una parte, il backend dall'altra. È la situazione
+normale, non un errore di impostazione.
 
 ### 4b. La regola
 
-Per la *Same-Origin Policy*, il browser **non lascia leggere** a una pagina la risposta
-di un'altra origine, a meno che quel server non l'autorizzi con un header:
+Per una regola di sicurezza del browser (*Same-Origin Policy*), una pagina **non può
+leggere** la risposta di un'altra origine, a meno che quel server non l'autorizzi
+esplicitamente con un header:
 
 ```
-Access-Control-Allow-Origin: https://portale-ticket-mario.netlify.app
+Access-Control-Allow-Origin: https://qualcosa-di-tuo-5500.app.github.dev
 ```
 
-Questo meccanismo è **CORS**. Attenzione a chi fa cosa:
+Questo meccanismo si chiama **CORS**. Attenzione a chi fa cosa:
 
-- **Il server** dichiara "accetto chiamate da queste origini".
-- **Il browser** controlla e, se l'origine non c'è, **butta via la risposta**.
+- **Il server** dichiara "accetto chiamate da queste origini" (l'header).
+- **Il browser** controlla e, se l'origine della pagina non c'è, **butta via la
+  risposta**: la richiesta parte lo stesso, ma tu non la vedi.
 - `curl`, `requests`, Postman **non hanno CORS**: non sono browser.
 
-### 4c. Chiudilo sulla tua pagina
+### 4c. Provoca l'errore
 
-Render → il tuo servizio → **Environment** → modifica:
+Apri `app/main.py` e guarda le righe del `CORSMiddleware`: `ALLOWED_ORIGINS` arriva da
+`.env`, e se manca vale `*`.
 
-| Key | Value |
-|-----|-------|
-| `ALLOWED_ORIGINS` | `https://portale-ticket-<tuonome>.netlify.app` (senza barra finale) |
+Nel file `.env` aggiungi una riga con un'origine che **non è la tua**:
 
-**Save** → Render rideploya da solo, uno o due minuti.
-
-**Come verifico**
-
-1. La tua pagina Netlify funziona ancora. Ricarica dopo il redeploy.
-2. Apri la pagina **del tuo vicino** e, nella sua console (F12), scrivi:
-   ```js
-   fetch("https://portale-ticket-<iltuonome>.onrender.com/tickets").then(r => r.json()).then(console.log)
-   ```
-   → errore rosso **CORS**. La tua API non autorizza la sua pagina.
-3. Nella scheda Network di quell'errore, guarda lo **status: 200**. L'API **ha risposto**.
-   È il browser che ha buttato la risposta.
-
-Leggi due volte il punto 3: è la cosa che sbagliano tutti.
-
-### 4d. Quindi CORS cosa protegge?
-
-Dal terminale, **la stessa chiamata che il browser ha bloccato**:
-
-```bash
-curl https://portale-ticket-<tuonome>.onrender.com/tickets
+```
+ALLOWED_ORIGINS=https://un-sito-che-non-e-la-mia-pagina.it
 ```
 
-Funziona. Senza problemi.
+Ferma `uvicorn` con `CTRL+C` e riavvialo: le variabili d'ambiente si leggono **all'avvio**,
+`--reload` non basta.
 
-**CORS non protegge la tua API** — `curl` passa lo stesso. **Protegge gli utenti dei
-browser**: impedisce a un sito estraneo di usare il browser di una persona per parlare
-con la tua API a nome suo.
+Ricarica la pagina.
+
+**Come verifico:** "Impossibile contattare l'API". Apri la console (F12), in rosso:
+
+```
+Access to fetch at 'https://...-8000.app.github.dev/tickets'
+from origin 'https://...-5500.app.github.dev' has been blocked by CORS policy:
+No 'Access-Control-Allow-Origin' header is present...
+```
+
+Ora vai nel tab **Network** e clicca su quella richiesta. Guarda lo **status: 200**.
+
+**L'API ha risposto.** Ha fatto il suo lavoro, i dati sono partiti. È il **browser** che
+ha buttato via la risposta prima di darla alla pagina.
+
+Leggi di nuovo le ultime due righe. È la cosa che sbagliano tutti: "errore CORS" non
+vuol dire che l'API è rotta. Vuol dire che l'API non ti ha autorizzato.
+
+### 4d. Aprila all'origine giusta
+
+In `.env` metti l'origine **della tua pagina** — quella della porta 5500, **senza barra
+finale** e senza `/index.html`:
+
+```
+ALLOWED_ORIGINS=https://qualcosa-di-tuo-5500.app.github.dev
+```
+
+Riavvia `uvicorn`, ricarica.
+
+**Come verifico:** la tabella si riempie. Nel tab Network, nella risposta, c'è l'header
+`access-control-allow-origin` con l'indirizzo della tua pagina.
+
+### 4e. Quindi CORS cosa protegge?
+
+Due prove, una dopo l'altra.
+
+**Uno.** Chiedi al compagno di fianco di aprire la **sua** pagina, premere F12 e
+scrivere nella console, mettendo il **tuo** indirizzo della 8000:
+
+```js
+fetch("https://qualcosa-di-TUO-8000.app.github.dev/tickets").then(r => r.json()).then(console.log)
+```
+
+→ errore rosso **CORS**. La tua API non autorizza la sua pagina.
+
+**Due.** Adesso lui, dal **terminale**, la stessa identica chiamata:
+
+```bash
+curl https://qualcosa-di-TUO-8000.app.github.dev/tickets
+```
+
+→ **funziona.** Escono tutti i tuoi ticket.
+
+**CORS non protegge la tua API.** `curl` passa, e passa chiunque non usi un browser.
+**Protegge gli utenti dei browser**: impedisce a un sito estraneo di usare il browser di
+una persona per parlare con la tua API a nome suo, sfruttando il fatto che quella
+persona è già dentro.
 
 La chiave protegge le **scritture**. CORS decide chi può **leggere le risposte da una
-pagina web**. Sono due cose diverse, e servono tutte e due.
+pagina web**. Sono due cose diverse e servono tutte e due.
 
-**Come verifico:** sai spiegare perché `curl` passa e il browser no.
+**Come verifico:** sai spiegare, con parole tue, perché `curl` passa e il browser no.
 
 ---
 
@@ -334,7 +405,7 @@ API_KEY = "chiave-del-corso-2026"
 ```
 
 È lì. Pubblica. Col tuo nome sopra. Chiunque la legge in due clic e può scrivere sulla
-tua API.
+tua API — e la tua API, da mezz'ora, è raggiungibile da internet.
 
 Ora apri `.gitignore`. Cerca `.env`. **Non c'è.** Quindi anche quel file è nel repo.
 
@@ -349,7 +420,9 @@ Ora apri `.gitignore`. Cerca `.env`. **Non c'è.** Quindi anche quel file è nel
    if not API_KEY:
        raise RuntimeError("Manca API_KEY: copia .env.example in .env e imposta una chiave.")
    ```
-   Il `load_dotenv()` che legge il file `.env` c'è già.
+   Il `load_dotenv()` che legge il file `.env` c'è già, in cima.
+3. Nel tuo `.env`, che ora è ignorato, aggiungi `API_KEY=chiave-del-corso-2026`.
+   Riavvia `uvicorn`: l'app riparte e funziona come prima.
 
 **Secondo tempo — il presente.** Il file è ancora dentro git.
 
@@ -359,68 +432,83 @@ git rm --cached .env
 
 `--cached` lo toglie da git ma **lo lascia sul disco**: l'app continua a girare.
 
-Commit e push.
+```bash
+git add -A && git commit -m "La chiave esce dal codice" && git push
+```
+
+Ricarica il tuo repo su GitHub: `.env` non c'è più, e in `main.py` non c'è nessuna
+chiave. Sembra finita.
 
 **Terzo tempo — il passato. È quello che conta.**
 
-Sul tuo repo su GitHub apri il **primo commit**, quello di quando hai creato il repo.
-Guarda `app/main.py`.
+Sul tuo repo, apri la lista dei **commit** e vai al **primo**, quello di quando hai
+creato il repo dal template. Apri `app/main.py`.
 
 **La chiave è ancora lì.**
 
-Git non dimentica. `.gitignore` protegge il futuro, `git rm --cached` il presente, ma
-la storia dei commit resta, e chiunque la può leggere.
+Git non dimentica niente. `.gitignore` protegge il futuro, `git rm --cached` il
+presente, ma la storia dei commit resta pubblica e chiunque la può leggere.
 
 L'unica riparazione vera è **cambiare la chiave**:
 
-1. scegline una nuova e mettila nel tuo `.env` (che ora è ignorato)
-2. su Render → **Environment** → aggiungi `API_KEY` con il nuovo valore → **Save**
-3. la vecchia chiave, quella nella storia, adesso non apre più niente
+1. scegline una nuova, tua, e mettila nel `.env` al posto di quella vecchia
+2. riavvia `uvicorn`
+3. prova a creare un ticket dalla pagina con la chiave **vecchia** → **401**.
+   Con quella nuova → **201**
+
+La chiave che è rimasta nella storia adesso non apre più niente.
 
 > **Un segreto finito su un repo pubblico è bruciato. Non si toglie: si cambia.**
 
+Succede sul serio, tutti i giorni, a gente pagata per non farlo. Esistono programmi che
+scandagliano GitHub in continuazione cercando chiavi nei commit, e le trovano in minuti.
+
 ### 5c. E la chiave nel browser?
 
-Ricordi il tab Network di stamattina, con `X-API-Key` in chiaro?
+Ricordi il tab Network di stamattina, con `X-API-Key` in chiaro nei Request Headers?
 
 Quella non si può nascondere. La pagina deve mandarla, e chi apre il browser la vede.
 **HTTPS protegge il canale, non il segreto**: cifra il viaggio, così nessuno la legge
 per strada — ma l'utente che la digita, ovviamente, ce l'ha.
 
 Per questo la pagina la **chiede all'utente** invece di tenerla scritta dentro: una
-chiave in un frontend non è un segreto, è un'etichetta. Identifica, non protegge.
+chiave in un frontend non è un segreto, è un'etichetta. **Identifica, non protegge.**
 
 Il modo giusto sarebbe un login vero — utenti, password, sessioni — dove il browser
-tiene un gettone temporaneo e non la chiave di tutti. Non lo facciamo oggi: la chiave
-unica è il primo gradino, non l'ultimo.
+tiene un gettone temporaneo, personale e che scade, e non la chiave di tutti. Non lo
+facciamo oggi: la chiave unica è il primo gradino, non l'ultimo.
 
 **Come verifico:** in `main.py` non c'è nessuna chiave scritta. `.env` è nel
-`.gitignore`. Su Render c'è `API_KEY` col valore nuovo. L'app funziona ancora — con la
-chiave nuova. E con la vecchia dà **401**.
+`.gitignore` e non è più nel repo. L'app funziona con la chiave nuova e dà **401** con
+quella vecchia. E nel primo commit su GitHub la vecchia si vede ancora — e sai perché
+non è un problema.
 
 ---
 
 ## Passo 6 — Il riattacco (75 min)
 
-Cinque attacchi, sul tuo portale **online**. Devono fallire tutti.
+Cinque attacchi, sul tuo portale raggiungibile da internet. **Devono fallire tutti.**
 
-Al posto di `API` metti `https://portale-ticket-<tuonome>.onrender.com`,
-al posto di `PAGINA` metti `https://portale-ticket-<tuonome>.netlify.app`.
+Al posto di `API` metti l'indirizzo della tua porta **8000**,
+al posto di `PAGINA` quello della tua porta **5500**.
 
 | # | Attacco | Come | Deve succedere |
 |---|---------|------|----------------|
 | 1 | SQL injection | `curl -G "API/tickets" --data-urlencode "status=x' OR '1'='1"` | **422** — il filtro non si scavalca |
 | 2 | Dati spazzatura | `POST` con titolo vuoto e `status:"banana"`, con la chiave | **422** — il database resta pulito |
 | 3 | Scrittura senza chiave | `curl -i -X DELETE "API/tickets/1"` | **401** — e lo stesso per POST e PUT |
-| 4 | Il segreto | apri `app/main.py` sul tuo repo, e il **primo commit** | nel file attuale nessuna chiave; nel primo commit c'è la vecchia, **che non funziona più** |
+| 4 | Il segreto | apri `app/main.py` sul tuo repo, **e poi il primo commit** | nel file di adesso nessuna chiave; nel primo commit c'è la vecchia, **che non funziona più** |
 | 5 | XSS | crea un ticket col titolo `<img src=x onerror="alert(1)">` e apri `PAGINA` | si **vede scritto**, nessun popup |
 
 E un sesto, che non è una falla ma va provato:
 
-| 6 | Origine estranea | dalla console di **un'altra** pagina: `fetch("API/tickets")` | errore CORS. Poi lo stesso URL con `curl`: **funziona**. Sai dire perché |
+| 6 | Origine estranea | dalla pagina di un compagno, in console: `fetch("API/tickets")` | errore CORS. Poi lui prova lo stesso URL con `curl`: **funziona**. Sai dire perché |
 
-**Se qualcosa non regge**, hai il pomeriggio: torna al passo di ieri o di oggi che lo
-riguarda e chiudilo. Il modulo finisce con tutti i test verdi, non con l'orario.
+**Fatteli verificare da un altro.** Scambiatevi gli indirizzi e attaccatevi a vicenda:
+è più onesto, e uno di fuori prova cose che a te non vengono in mente.
+
+**Se qualcosa non regge**, hai tempo: torna al passo di ieri o di oggi che lo riguarda e
+chiudilo. Il modulo finisce con i test verdi, non con l'orario.
 
 ---
 
@@ -431,14 +519,11 @@ Crea `REPORT.md` nel repo, committa e pusha.
 ```markdown
 # Portale Assistenza — report
 
-- API:      https://portale-ticket-<tuonome>.onrender.com
-- Pagina:   https://portale-ticket-<tuonome>.netlify.app
-
-## I cinque attacchi
+## I sei attacchi
 (uno per riga: quale, cosa ha risposto, regge sì/no)
 
-## Il cold start
-Quanti secondi ci ha messo la prima richiesta dopo la pausa, e perché.
+## Il numero che ho guardato
+Quanti millisecondi ci mette una richiesta nel tab Network, e cosa lo farebbe crescere.
 
 ## La cosa che non sapevo
 Una riga. Quella vera.
@@ -448,7 +533,7 @@ Una riga. Quella vera.
 
 ## Cosa ti porti a casa
 
-1. Un'API e una pagina sono **due programmi separati** che si parlano via HTTP, e in produzione stanno su due servizi diversi.
+1. Un'API e una pagina sono **due programmi separati** che si parlano via HTTP, e stanno su due indirizzi diversi.
 2. Un dato che viene da fuori non è mai codice: lo diventa se sei tu a metterlo dove il browser lo esegue.
 3. CORS non protegge l'API: protegge gli utenti del browser. La chiave protegge le scritture. Due cose diverse.
 4. HTTPS protegge il canale, non il segreto.
