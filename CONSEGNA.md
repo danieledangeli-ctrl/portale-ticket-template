@@ -64,8 +64,10 @@ In basso, nel pannello **PORTS**, è comparsa la riga **8000**.
 La pagina e l'API sono due programmi diversi. La pagina **non sa** dove sia l'API: glielo
 dite voi, e si fa in un file solo.
 
-1. pannello **PORTS**, riga **8000**, colonna **Forwarded Address**: copiate l'indirizzo
-   (è una cosa tipo `https://qualcosa-di-vostro-8000.app.github.dev`)
+Quando avete lanciato `make backend`, in cima ha stampato l'indirizzo dell'API — una cosa
+tipo `https://qualcosa-di-vostro-8000.app.github.dev`. Serve quello.
+
+1. copiate quell'indirizzo (quello scritto dopo `API:` nel terminale del backend)
 2. aprite `frontend/config.js`
 3. incollatelo al posto dell'indirizzo che c'è, **senza la barra finale**
 
@@ -75,8 +77,8 @@ const API_URL = "https://qualcosa-di-vostro-8000.app.github.dev";
 
 **Come verifico:** aprite quell'indirizzo in una scheda nuova aggiungendo `/health` in
 fondo. Deve rispondere `{"status":"ok"}`. Se vedete una pagina di login di GitHub, la
-porta 8000 è privata: nel pannello PORTS, tasto destro sulla riga → **Port Visibility** →
-**Public**.
+porta 8000 è privata: pannello **PORTS**, tasto destro sulla riga 8000 → **Port
+Visibility** → **Public**.
 
 ### 0.4 — Accendere la pagina (terminale 2)
 
@@ -86,7 +88,8 @@ Aprite un terminale **nuovo** (il `+` nel pannello del terminale): il primo è o
 make frontend
 ```
 
-Poi nel pannello **PORTS**, riga **5500**, cliccate l'icona del **mondo**.
+Anche qui, in cima, `make frontend` stampa il link della pagina: **Ctrl/Cmd + clic** per
+aprirla. (In alternativa: pannello **PORTS**, riga **5500**, icona del **mondo**.)
 
 **Come verifico:** si apre il portale. C'è il titolo "Assistenza interna", una tabella con
 **tre segnalazioni**, un menu per filtrare e un form per crearne di nuove.
