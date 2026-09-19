@@ -80,7 +80,13 @@ Tre righe, tre cose diverse:
 
 ### 1b. Il traffico vero
 
-Premi **F12** → scheda **Network** → ricarica la pagina.
+> **Cos'è F12.** Apre gli **Strumenti per sviluppatori del browser** (Chrome/Edge/Firefox):
+> vanno usati **sulla pagina del portale**, cioè nella scheda del browser dove l'hai aperta —
+> **non** dentro l'editor di VS Code / Codespaces. Se `F12` non risponde (tipico sui Mac),
+> **tasto destro sulla pagina → Ispeziona**, oppure `Cmd + Option + I`.
+
+Apri la pagina del portale nel browser, premi **F12**, vai alla scheda **Network** e
+**ricarica** la pagina.
 
 Clicca sulla riga `tickets`. Sono le stesse cose che ieri vedevi in `curl`, ma disegnate:
 

@@ -103,6 +103,8 @@ Cinque minuti, senza scrivere niente. Provate:
 - create una segnalazione col form (la chiave è alla lavagna)
 - premete **F12** → scheda **Network** → ricaricate: vedete le richieste che la pagina
   fa all'API, una per una, con il loro esito
+  *(F12 apre gli Strumenti per sviluppatori del **browser**, sulla pagina — non in VS Code.
+  Sui Mac, se non risponde: tasto destro sulla pagina → Ispeziona, oppure `Cmd + Option + I`.)*
 
 **Questa è l'applicazione che vi hanno consegnato.** Funziona. Sembra a posto.
 
