@@ -1,32 +1,65 @@
 """
-Portale Ticket — punto di partenza.
+Portale Ticket — l'API dell'assistenza interna.
 
-Quello che c'e' gia':
-  GET /health          il server e' vivo?
-  GET /tickets         la lista dei ticket
-  GET /tickets/{id}    un ticket solo, oppure 404 se non esiste
+Endpoint:
+  GET    /health              -> il server e' vivo
+  GET    /tickets             -> lista (filtro opzionale ?status=aperto)
+  GET    /tickets/{id}        -> un ticket, 404 se non c'e'
+  POST   /tickets             -> crea (richiede X-API-Key)
+  PUT    /tickets/{id}        -> DA SCRIVERE
+  DELETE /tickets/{id}        -> cancella (richiede X-API-Key)
 
-Quello che costruisci tu, seguendo la CONSEGNA:
-  POST   /tickets        creare un ticket
-  PUT    /tickets/{id}   modificarlo
-  DELETE /tickets/{id}   cancellarlo
-  il filtro ?status=...  e la chiave X-API-Key sulle scritture
+Al primo avvio il database viene creato e riempito con i tre ticket di esempio
+(gli stessi del template).
 
-Al primo avvio il database viene creato e riempito con tre ticket di esempio,
-cosi' hai subito qualcosa da vedere.
+Avvio:  uvicorn app.main:app --reload
+Docs:   http://127.0.0.1:8000/docs
 """
 
-from fastapi import FastAPI, HTTPException
+from fastapi import Depends, FastAPI, Header, HTTPException, Query, Request
+from fastapi.middleware.cors import CORSMiddleware
 
 from app import db
-from app.models import TicketOut
+import os
+from typing import Optional
 
-app = FastAPI(title="Portale Ticket", version="0.2")
+from dotenv import load_dotenv
+
+from app.models import TicketIn, TicketOut, TicketStatus
+
+load_dotenv()
+
+# La chiave che protegge le scritture.
+API_KEY = "chiave-del-corso-2026"
+
+app = FastAPI(title="Portale Ticket", version="1.0")
+
+# --- CORS -------------------------------------------------------------------
+# Chi puo' chiamare questa API da un browser. Con ["*"] chiunque: va bene SOLO
+# per la versione del docente usata come bersaglio la mattina di G2.
+# Nella vostra versione (G2 pomeriggio) qui ci va l'URL esatto del vostro frontend.
+ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "*").split(",")
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=ALLOWED_ORIGINS,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Preparazione del database, una volta sola all'avvio del server:
 # prima la tabella, poi i ticket di esempio (solo se la tabella e' vuota).
 db.init_db()
 db.seed_if_empty()
+
+
+def require_api_key(x_api_key: Optional[str] = Header(default=None)):
+    """Lascia passare solo chi presenta la chiave giusta.
+
+    Il nome "x_api_key" diventa l'header "X-API-Key": FastAPI converte
+    gli underscore in trattini da solo.
+    """
+    if x_api_key != API_KEY:
+        raise HTTPException(status_code=401, detail="Chiave API mancante o errata")
 
 
 @app.get("/health")
@@ -35,14 +68,10 @@ def health():
     return {"status": "ok"}
 
 
-@app.get("/tickets", response_model=list[TicketOut])
-def list_tickets():
-    """La lista completa dei ticket.
-
-    response_model=list[TicketOut] dice a FastAPI: "rispondi una lista di ticket".
-    Serve anche a generare la documentazione automatica su /docs.
-    """
-    return db.list_tickets()
+@app.get("/tickets")
+def list_tickets(status: Optional[str] = Query(default=None)):
+    """La lista dei ticket, eventualmente filtrata per stato."""
+    return db.list_tickets(status)
 
 
 @app.get("/tickets/{ticket_id}", response_model=TicketOut)
@@ -59,3 +88,29 @@ def get_ticket(ticket_id: int):
         raise HTTPException(status_code=404, detail="Ticket non trovato")
 
     return ticket
+
+
+@app.post("/tickets", status_code=201, dependencies=[Depends(require_api_key)])
+async def create_ticket(request: Request):
+    """Crea un nuovo ticket.
+
+    Prende il JSON che arriva e lo salva.
+    """
+    dati = await request.json()
+    return db.create_ticket(
+        dati.get("title", ""),
+        dati.get("description", ""),
+        dati.get("status", "aperto"),
+    )
+
+
+# TODO — Manca PUT /tickets/{ticket_id}.
+# Il menu "stato" del frontend lo chiama e si prende un 405: il metodo non
+# esiste. Scriverlo e' il vostro lavoro: db.update_ticket() c'e' gia'.
+
+
+@app.delete("/tickets/{ticket_id}", status_code=204)
+def delete_ticket(ticket_id: int):
+    """Cancella un ticket. 204 vuol dire "fatto, e non ho niente da dirti"."""
+    if not db.delete_ticket(ticket_id):
+        raise HTTPException(status_code=404, detail="Ticket non trovato")

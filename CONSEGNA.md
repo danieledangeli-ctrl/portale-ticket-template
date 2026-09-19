@@ -1,398 +1,210 @@
-# Consegna G1 — Il mio portale ticket, v1
+# Portale Assistenza — trova le falle e chiudile
 
-**"L'API che ricorda e che si difende."**
+**"L'app funziona. Ma è piena di buchi."**
 
-Parti da un'API che **legge già** dei ticket da un database. Alla fine della giornata quell'API
-sa anche creare, modificare e cancellare, rifiuta i dati sbagliati, non si fa bucare da una
-SQL injection e accetta scritture solo con la chiave.
+Hai un portale ticket completo: si apre, mostra le segnalazioni, ne crea di nuove.
+Sembra a posto. Non lo è. Dentro ci sono **cinque punti deboli** e **un pezzo mancante**.
 
-Sette passi. Ognuno finisce con **"Come verifico"**: non passare al successivo finché la verifica non è verde.
-I passi 1–4 li fanno tutti. Il 6 è il traguardo. Se sei in ritardo, il 5 si può saltare senza perdere nulla.
+Il tuo lavoro non è costruire da zero: è quello che si fa davvero in azienda, cioè
+prendere codice che gira, capire dove è fragile, e ripararlo.
 
-> Regola della giornata: **Copilot autocompletamento spento, Copilot Chat acceso.**
-> Alla chat chiedi "spiegami questo errore", non "scrivi il codice".
+Ogni passo ha tre momenti:
+- **Attacca** — fai il danno con le tue mani, così vedi che il buco è vero.
+- **Guarda** — cosa è successo, e perché.
+- **Ripara** — poche righe. Poi **riattacca**: non deve più funzionare.
 
----
+> **Come si avvia** (una volta sola, poi resta acceso):
+> - Backend: nel terminale, `uvicorn app.main:app --reload`
+> - Frontend: in un **secondo** terminale, `cd frontend && python3 -m http.server 5500`, poi apri `http://127.0.0.1:5500`
+> - La chiave per scrivere te la dà il docente (è scritta alla lavagna).
 
-## Passo 0 — Prima di partire
-
-- [ ] Hai creato il tuo repo dal template e aperto il Codespace (vedi `README.md`).
-- [ ] Il terminale è aperto in basso (menu **Terminal → New Terminal**).
-- [ ] Nell'albero dei file a sinistra vedi `app/main.py`, `app/db.py`, `app/models.py`, `requirements.txt`, `.env.example`.
-- [ ] Hai letto il punto 5 del `README.md`: **`git add . && git commit -m "..." && git push` alla fine di ogni passo**. Senza push, domani riparti da zero.
-
----
-
-## Passo 1 — Ambiente pronto: il server risponde e mostra dei dati
-
-Nel terminale:
-
-```bash
-uvicorn app.main:app --reload
-```
-
-`--reload` riavvia il server da solo ogni volta che salvi un file. Lascialo acceso per tutto il pomeriggio.
-Se devi dare altri comandi, apri un **secondo** terminale (icona `+` nel pannello del terminale).
-
-**Come verifico**
-
-- Compare l'avviso della porta 8000 → **Apri nel browser**.
-- Aggiungi `/health` all'URL → vedi `{"status":"ok"}`.
-- Aggiungi `/tickets` all'URL → vedi **tre ticket già pronti**. Non li hai scritti tu: li ha inseriti
-  il server al primo avvio, per darti qualcosa su cui lavorare.
-- Aggiungi `/docs` all'URL → vedi la pagina con i tre endpoint che esistono adesso:
-  `GET /health`, `GET /tickets`, `GET /tickets/{ticket_id}`.
-  Clicca **Try it out → Execute** su `GET /tickets` → risposta `200`.
-
-Nell'albero dei file è comparso `tickets.db`: è il database, un file solo.
-È già nel `.gitignore`, non finirà su GitHub.
-
-Se fallisce: guarda il terminale. La riga rossa in fondo dice il file e il numero di riga dell'errore.
+Se ti blòcchi su un passo per più di dieci minuti, apri il triangolino **"Serve una mano"**
+in fondo al passo: ti dice **dove** guardare, non la soluzione.
 
 ---
 
-## Passo 2 — Capire quello che c'è
+## Passo 1 — Il filtro che mostra troppo
 
-In questo passo **non scrivi codice**. Apri i tre file e guardali con il docente: quello che
-c'è dentro è esattamente quello che aggiungerai tu nei passi successivi.
+**Attacca.** Nella pagina, in alto a destra dell'elenco, c'è il menu "Mostra". Sceglie
+quali ticket vedere. Ora aprilo dal browser a mano: nella barra dell'indirizzo del
+**backend** (porta 8000, non la pagina) scrivi:
 
-### `app/models.py` — che forma ha un ticket
-
-`TicketIn` sono i dati che arrivano da fuori, `TicketOut` quelli che rispondiamo.
-Nota due cose:
-
-- `TicketIn` **non ha l'id né created_at**: li decide il server. Se li decidesse il client,
-  chiunque potrebbe scrivere sopra il ticket di un altro.
-- `TicketStatus` ammette **solo tre parole**. Qualunque altra cosa verrà rifiutata, e non
-  perché l'abbiamo controllata noi a mano: lo fa FastAPI leggendo il modello.
-
-### `app/db.py` — tutto il SQL sta qui
-
-Nessun'altra parte del programma tocca il database. In `main.py` vogliamo leggere gli
-endpoint senza vedere il SQL di mezzo.
-
-Guarda com'è scritta ogni query:
-
-```python
-conn.execute("SELECT * FROM tickets WHERE id = ?", (ticket_id,))
+```
+http://127.0.0.1:8000/tickets?status=aperto
 ```
 
-Il valore non è dentro la stringa: sta fuori, e al suo posto c'è un `?`.
-**Questa è la difesa contro la SQL injection**, e vale per ogni query che scriverai oggi.
-Al passo 7 proviamo cosa succede a chi non lo fa.
+Vedi solo gli aperti. Giusto. Adesso prova questo al posto di `aperto`:
 
-Guarda anche `seed_if_empty()`: prima conta le righe, e se ce n'è anche una sola non fa niente.
-Senza quel controllo, ogni volta che salvi un file `--reload` riavvia il server e ti ritrovi
-tre ticket in più.
+```
+http://127.0.0.1:8000/tickets?status=x' OR '1'='1
+```
 
-### `app/main.py` — gli endpoint
+**Guarda.** Chiedevi uno stato che non esiste (`x`), e invece di darti zero ticket
+te li ha dati **tutti**. Il filtro è stato scavalcato. Apri `app/db.py`, funzione
+`list_tickets`: la query viene **costruita incollando** il testo che arriva
+dall'utente. Chi scrive nel filtro non sta scegliendo uno stato: sta scrivendo un
+pezzo della tua query. Questo è l'**SQL injection**.
 
-Tre endpoint, tutti in lettura. Guarda `get_ticket`: se il database risponde `None`,
-alziamo un `HTTPException` con **404**. Un id che non esiste non è un errore del server:
-è una richiesta legittima a cui si risponde "non trovato".
+**Ripara.** Il valore non deve essere incollato nella stringa, ma passato a parte
+con il segnaposto `?`. Così il database lo tratta come un **dato**, mai come codice.
 
-**Come verifico** (rispondi a queste, non serve scrivere niente)
+**Riattacca.** Rilancia lo stesso indirizzo con `x' OR '1'='1`: ora restituisce
+zero ticket, perché nessuno ha davvero quello stato. Il filtro onesto continua a funzionare.
 
-1. Nel browser: `.../tickets/2` → cosa vedi? E `.../tickets/99`?
-2. `.../tickets/pippo` → che numero ti risponde? Chi l'ha deciso, visto che nel codice
-   non c'è nessun controllo su `pippo`?
-3. In `db.py`, quante funzioni servono al database per **scrivere** un ticket? Contale.
-   (Risposta: zero. Le scrivi tu adesso.)
+<details><summary>Serve una mano</summary>
+
+`app/db.py`, `list_tickets`. Guarda com'è già scritta la query di `get_ticket` poco
+sotto: usa `?` e una tupla. Il filtro va scritto allo stesso modo:
+`"... WHERE status = ? ORDER BY id", (status,)`.
+</details>
 
 ---
 
-## Passo 3 — Creare: `POST /tickets`
+## Passo 2 — Il form che accetta qualsiasi cosa
 
-Adesso l'API impara a scrivere. Servono due pezzi: la funzione che parla col database,
-e l'endpoint che la usa.
+**Attacca.** Nel form della pagina prova a creare una segnalazione con il **titolo vuoto**.
+Passa. Poi, dalla documentazione del backend (`http://127.0.0.1:8000/docs`, endpoint
+`POST /tickets`, "Try it out"), manda un ticket con `"status": "banana"`.
 
-### 3a. In `app/db.py`
+**Guarda.** Ricarica l'elenco: c'è una riga senza titolo, e una con uno stato che il
+tuo portale non sa neanche colorare. Il database si sta riempiendo di roba senza senso.
+Apri `app/main.py`, `create_ticket`: prende il JSON e lo salva **così com'è**, senza
+controllare niente.
 
-Aggiungi questa funzione **subito prima** di `def _now()`:
+**Ripara.** Esiste già un modello, `TicketIn` in `app/models.py`, che dice com'è fatto
+un ticket valido (titolo da 3 a 100 caratteri, stato solo fra i tre ammessi). Basta
+dire a FastAPI di usarlo: cambia la firma della funzione perché riceva un `TicketIn`,
+e lascia che sia lui a rispondere **422** quando i dati non vanno.
 
-```python
-def create_ticket(title: str, description: str, status: str) -> dict:
-    """Inserisce un nuovo ticket e restituisce il ticket appena creato.
+**Riattacca.** Titolo vuoto → **422**, `status: "banana"` → **422**. Un ticket vero
+passa ancora.
 
-    lastrowid e' l'id che SQLite ha assegnato alla riga appena inserita:
-    lo usiamo per rileggere il ticket completo, con id e created_at.
-    """
-    with get_connection() as conn:
-        cursor = conn.execute(
-            "INSERT INTO tickets (title, description, status, created_at) VALUES (?, ?, ?, ?)",
-            (title, description, status, _now()),
-        )
-        new_id = cursor.lastrowid
+<details><summary>Serve una mano</summary>
 
-    return get_ticket(new_id)
-```
-
-Quattro `?`, quattro valori. Mai una f-string.
-
-### 3b. In `app/main.py`
-
-Cambia la riga dell'import dei modelli, aggiungendo `TicketIn`:
-
-```python
-from app.models import TicketIn, TicketOut
-```
-
-Poi aggiungi questo endpoint **in fondo al file**:
-
-```python
-@app.post("/tickets", response_model=TicketOut, status_code=201)
-def create_ticket(ticket: TicketIn):
-    """Crea un nuovo ticket.
-
-    "ticket: TicketIn" dice a FastAPI: prendi il JSON che arriva, controllalo
-    contro il modello, e se non va bene rispondi 422 senza nemmeno chiamarmi.
-    """
-    return db.create_ticket(ticket.title, ticket.description, ticket.status)
-```
-
-`status_code=201` perché 201 vuol dire "creato", mentre 200 vuol dire solo "ok".
-
-Salva. Il terminale dice `Reloading...` e poi `Application startup complete`.
-
-**Come verifico** (tutto da `/docs`, ricarica la pagina)
-
-1. `POST /tickets` → Try it out → body `{"title": "Proiettore aula 1 non parte", "description": "Schermo blu"}` → Execute → **201** e il ticket con l'id nuovo.
-2. `GET /tickets` → **200**, adesso ce ne sono quattro.
-3. `POST /tickets` con `{"title": "ab"}` → **422** e il messaggio `String should have at least 3 characters`.
-4. `POST /tickets` con `{"title": "Mouse rotto", "status": "boh"}` → **422**: lo stato non è tra i tre ammessi.
-5. **Il test che conta**: `CTRL+C` nel terminale di uvicorn, rilancia `uvicorn app.main:app --reload`, rifai `GET /tickets` → **il ticket che hai creato c'è ancora**. È su disco, non in memoria.
+Confronta con `POST` della soluzione o con il modo in cui `get_ticket` dichiara i suoi
+parametri. La firma diventa `def create_ticket(ticket: TicketIn):` e dentro usi
+`ticket.title`, `ticket.description`, `ticket.status`. Sparisce il `request.json()`.
+</details>
 
 ---
 
-## Passo 4 — Modificare e cancellare: `PUT`, `DELETE`, 404
+## Passo 3 — La cancellazione che non chiede niente
 
-### 4a. In `app/db.py`
+**Attacca.** Creare un ticket chiede la chiave. Cancellarne uno, no. Provalo: dalla
+documentazione (`/docs`, `DELETE /tickets/{id}`) cancella il ticket 1 **senza** mettere
+nessuna chiave. Sparisce.
 
-Aggiungi queste due funzioni dopo `create_ticket`:
+**Guarda.** Leggere è giusto che sia libero. Ma **cancellare** è una scrittura, e le
+scritture le protegge la chiave. In `app/main.py` guarda `POST`: ha
+`dependencies=[Depends(require_api_key)]`. `DELETE`, sotto, **non ce l'ha**.
 
-```python
-def update_ticket(ticket_id: int, title: str, description: str, status: str) -> Optional[dict]:
-    """Modifica un ticket esistente. Restituisce None se quell'id non esiste.
+**Ripara.** Aggiungi la stessa guardia al `DELETE`. Una riga, copiata da `POST`.
 
-    rowcount dice quante righe sono state modificate: se e' 0, l'id non c'era.
-    """
-    with get_connection() as conn:
-        cursor = conn.execute(
-            "UPDATE tickets SET title = ?, description = ?, status = ? WHERE id = ?",
-            (title, description, status, ticket_id),
-        )
-        if cursor.rowcount == 0:
-            return None
+**Riattacca.** `DELETE` senza chiave → **401**. Con la chiave giusta → cancella.
 
-    return get_ticket(ticket_id)
+<details><summary>Serve una mano</summary>
 
-
-def delete_ticket(ticket_id: int) -> bool:
-    """Cancella un ticket. Restituisce True se c'era, False se l'id non esisteva."""
-    with get_connection() as conn:
-        cursor = conn.execute("DELETE FROM tickets WHERE id = ?", (ticket_id,))
-        return cursor.rowcount > 0
-```
-
-### 4b. In `app/main.py`
-
-Aggiungi in fondo:
-
-```python
-@app.put("/tickets/{ticket_id}", response_model=TicketOut)
-def update_ticket(ticket_id: int, ticket: TicketIn):
-    """Sostituisce un ticket esistente con i dati che arrivano."""
-    updated = db.update_ticket(ticket_id, ticket.title, ticket.description, ticket.status)
-    if updated is None:
-        raise HTTPException(status_code=404, detail="Ticket non trovato")
-    return updated
-
-
-@app.delete("/tickets/{ticket_id}", status_code=204)
-def delete_ticket(ticket_id: int):
-    """Cancella un ticket. 204 vuol dire "fatto, e non ho niente da dirti"."""
-    if not db.delete_ticket(ticket_id):
-        raise HTTPException(status_code=404, detail="Ticket non trovato")
-```
-
-Nota che il controllo del 404 è lo stesso di `get_ticket`: se il database dice
-"non c'era", l'API risponde 404. Sempre la stessa forma.
-
-**Come verifico** (da `/docs`)
-
-1. `PUT /tickets/1` con `{"title": "Stampante piano 2 offline", "status": "chiuso"}` → **200** e lo stato aggiornato.
-2. `GET /tickets/1` → lo stato è `chiuso`.
-3. `PUT /tickets/999` con un titolo qualsiasi → **404** `Ticket non trovato`.
-4. `DELETE /tickets/3` → **204**, nessun corpo nella risposta.
-5. `DELETE /tickets/3` una seconda volta → **404**: adesso non c'è più.
-6. `GET /tickets` → il ticket 3 è sparito, gli altri ci sono.
+`app/main.py`, riga di `@app.delete(...)`. Aggiungi `, dependencies=[Depends(require_api_key)]`
+dentro le parentesi del decoratore, esattamente come su `@app.post`.
+</details>
 
 ---
 
-## Passo 5 — Filtrare: `GET /tickets?status=aperto`
+## Passo 4 — Il pezzo che manca: cambiare stato
 
-Chi usa il portale vuole vedere solo i ticket aperti. Aggiungiamo un **query parameter**.
+**Attacca.** Nell'elenco, cambia lo stato di un ticket con il menu colorato. In basso
+compare un errore. Apri la console (F12): il server ha risposto **405**.
 
-### 5a. In `app/db.py` sostituisci `list_tickets` con:
+**Guarda.** Il menu chiama `PUT /tickets/{id}`, ma quell'endpoint **non esiste**: in
+`app/main.py` c'è solo un commento `# TODO`. `405` vuol dire "quel metodo qui non c'è".
+Questa non è una falla: è codice da scrivere. La funzione che tocca il database,
+`update_ticket`, esiste già in `db.py`: manca solo l'endpoint che la usa.
 
-```python
-def list_tickets(status: Optional[str] = None) -> list[dict]:
-    """Restituisce i ticket, dal piu' vecchio al piu' recente.
+**Ripara.** Scrivi `PUT /tickets/{ticket_id}`. Prendi `POST` come modello: stessa
+protezione con la chiave, stesso `TicketIn` in ingresso (il passo 2!), ma chiama
+`db.update_ticket(...)` e risponde **404** se quell'id non c'è.
 
-    Se "status" e' None restituisce tutti i ticket, altrimenti solo quelli
-    con quello stato.
-    """
-    with get_connection() as conn:
-        if status is None:
-            rows = conn.execute("SELECT * FROM tickets ORDER BY id").fetchall()
-        else:
-            rows = conn.execute(
-                "SELECT * FROM tickets WHERE status = ? ORDER BY id", (status,)
-            ).fetchall()
+**Riattacca.** Cambia stato dalla pagina: la pastiglia cambia colore, niente errore.
 
-    return [dict(row) for row in rows]
+<details><summary>Serve una mano</summary>
+
+Struttura:
 ```
-
-### 5b. In `app/main.py`
-
-Aggiungi agli import in alto:
-
-```python
-from typing import Optional
-
-from fastapi import FastAPI, HTTPException, Query
-
-from app.models import TicketIn, TicketOut, TicketStatus
-```
-
-(le righe `from fastapi import ...` e `from app.models import ...` **sostituiscono** quelle che c'erano).
-Poi sostituisci l'endpoint `GET /tickets` con:
-
-```python
-@app.get("/tickets", response_model=list[TicketOut])
-def list_tickets(status: Optional[TicketStatus] = Query(default=None)):
-    """La lista dei ticket, eventualmente filtrata per stato."""
-    return db.list_tickets(status)
-```
-
-**Come verifico**
-
-1. Nel browser: `.../tickets?status=aperto` → solo gli aperti. `.../tickets?status=chiuso` → solo i chiusi. `.../tickets` → tutti.
-2. `.../tickets?status=boh` → **422**: `TicketStatus` ammette solo tre valori.
-3. `.../tickets?status=' OR '1'='1` → **422**. E anche se passasse la validazione, il `?` nella
-   query lo tratterebbe come testo da cercare, non come comando. **Due difese, non una.**
-
----
-
-## Passo 6 — Difendersi: la chiave `X-API-Key`
-
-Leggere è libero. Scrivere solo con la chiave. La chiave **non sta nel codice**: sta in una variabile d'ambiente.
-
-### 6a. Il file `.env`
-
-Nel terminale (il secondo, non quello di uvicorn):
-
-```bash
-cp .env.example .env
-```
-
-Apri `.env` e cambia il valore: `API_KEY=una-frase-lunga-che-sai-solo-tu`. Salva.
-`.env` è nel `.gitignore`: **non** verrà mai committato. `.env.example` sì, ma è vuoto di segreti.
-
-### 6b. In `app/main.py`
-
-Import in alto (aggiungi `os` e `dotenv`, e allarga quello di fastapi):
-
-```python
-import os
-from typing import Optional
-
-from dotenv import load_dotenv
-from fastapi import Depends, FastAPI, Header, HTTPException, Query
-```
-
-Subito dopo gli import, **prima** di `app = FastAPI(...)`:
-
-```python
-load_dotenv()
-API_KEY = os.getenv("API_KEY")
-if not API_KEY:
-    raise RuntimeError("Manca API_KEY: copia .env.example in .env e imposta una chiave.")
-```
-
-Dopo `db.seed_if_empty()`, la **guardia**:
-
-```python
-def require_api_key(x_api_key: Optional[str] = Header(default=None)):
-    """Lascia passare solo chi presenta la chiave giusta.
-
-    Il nome "x_api_key" diventa l'header "X-API-Key": FastAPI converte
-    gli underscore in trattini da solo.
-    """
-    if x_api_key != API_KEY:
-        raise HTTPException(status_code=401, detail="Chiave API mancante o errata")
-```
-
-Infine aggiungi `dependencies=[Depends(require_api_key)]` ai **tre** decoratori delle scritture:
-
-```python
-@app.post("/tickets", response_model=TicketOut, status_code=201, dependencies=[Depends(require_api_key)])
-...
 @app.put("/tickets/{ticket_id}", response_model=TicketOut, dependencies=[Depends(require_api_key)])
-...
-@app.delete("/tickets/{ticket_id}", status_code=204, dependencies=[Depends(require_api_key)])
+def update_ticket(ticket_id: int, ticket: TicketIn):
+    aggiornato = db.update_ticket(ticket_id, ticket.title, ticket.description, ticket.status)
+    if aggiornato is None:
+        raise HTTPException(status_code=404, detail="Ticket non trovato")
+    return aggiornato
 ```
-
-I `GET` restano liberi.
-
-**Come verifico** (da `/docs`, ricarica: nei tre endpoint protetti è comparso il campo `x-api-key`)
-
-1. `POST /tickets` **senza** compilare `x-api-key` → **401** `Chiave API mancante o errata`.
-2. `POST /tickets` con `x-api-key` = la chiave del tuo `.env` → **201**.
-3. `GET /tickets` senza chiave → **200**: leggere è libero.
-4. `DELETE /tickets/1` con chiave sbagliata → **401**. Con quella giusta → **204**.
-5. Nel terminale: `git status` → `.env` **non** compare tra i file da committare. `tickets.db` nemmeno.
+</details>
 
 ---
 
-## Passo 7 — Test finale: l'API ricorda e si difende
+## Passo 5 — Il dato che diventa codice (XSS)
 
-Spunta tutto. Se una riga non è verde, torna al passo indicato.
+**Attacca.** Crea una segnalazione con questo **titolo** esatto:
 
-| Test | Come | Atteso | Passo |
-|------|------|--------|-------|
-| Ricorda | riavvia uvicorn, `GET /tickets` | i ticket ci sono ancora | 3 |
-| Rifiuta dati sbagliati | `POST` con `{"title": "ab"}` (con chiave) | **422** | 3 |
-| Rifiuta stati inventati | `POST` con `"status": "boh"` | **422** | 3 |
-| Non esiste → 404 | `GET /tickets/9999` | **404** | 4 |
-| Cancella davvero | `DELETE` due volte lo stesso id | **204** poi **404** | 4 |
-| Filtra | `?status=aperto` | solo gli aperti | 5 |
-| Injection nel filtro | `?status=' OR '1'='1` | **422**, nessun dato extra | 5 |
-| Injection nel body | `POST` con `{"title": "x'); DROP TABLE tickets; --"}` (con chiave) | **201**, salvato come testo, poi `GET /tickets` funziona ancora | 3 |
-| Senza chiave | `POST` senza `x-api-key` | **401** | 6 |
-| Chiave sbagliata | `DELETE /tickets/1` con chiave `abc` | **401** | 6 |
-| Segreti fuori dal repo | `git status` | `.env` e `tickets.db` non compaiono | 6 |
-
-L'ultima riga dell'injection nel body è quella da guardare con attenzione: il ticket **viene creato**,
-con quel titolo assurdo dentro. Non è un bug. Il `?` ha fatto il suo lavoro: quel testo è finito
-nel database come **testo**, non come comando. La tabella è ancora lì.
-
-Poi salva il lavoro:
-
-```bash
-git add .
-git commit -m "Portale ticket v1: CRUD, validazione, filtro, API key"
-git push
+```
+<img src=x onerror="alert('bucato')">
 ```
 
-**Come verifico:** su GitHub, nel tuo repo, vedi `app/db.py` e `app/main.py` con le funzioni nuove.
-**Non** vedi `.env` né `tickets.db`.
+**Guarda.** Appena l'elenco si ricarica, parte un popup. Tu volevi scrivere un titolo,
+e il browser ha eseguito il tuo testo come **codice**. Immagina che al posto di
+`alert` ci fosse qualcosa che ruba la sessione di chi apre la pagina. Apri
+`frontend/app.js`, `costruisciRiga`: il titolo viene messo nella pagina con `innerHTML`,
+che dice al browser "questo è HTML, eseguilo".
 
-Domani questa API va online e ci mettiamo davanti una pagina web.
+**Ripara.** Il titolo e la descrizione vanno messi con `textContent`, che dice al
+browser "questo è **testo**, mostralo e basta". Serve creare i due `<div>` a mano e
+riempirli con `textContent` invece di comporre una stringa di HTML.
+
+**Riattacca.** Ricarica: quel ticket ora si **vede scritto**, `<img ...>` compreso,
+e nessun popup. Il dato è tornato a essere un dato.
+
+<details><summary>Serve una mano</summary>
+
+`frontend/app.js`, dentro `costruisciRiga`, il blocco `cellaTesto.innerHTML = ...`.
+Sostituiscilo creando due `div` (`document.createElement("div")`), dando a ciascuno
+la sua classe (`cella-titolo`, `cella-descrizione`) e assegnando `.textContent = ticket.title`
+e `.textContent = ticket.description`. Confronta con la soluzione del docente.
+</details>
 
 ---
 
-## Se ti perdi
+## Passo 6 — Il segreto che non è segreto
 
-- Chiedi. La soluzione completa ce l'ha il docente: serve per **confrontare**, non per copiare, perché domani riparti dal tuo codice.
-- Gli errori tipici li raccogliamo insieme negli ultimi 30 minuti: diventano domande della verifica.
+**Guarda** (questo è da leggere, non da attaccare). Apri `app/main.py`: la chiave è
+**scritta lì dentro**, in chiaro: `API_KEY = "chiave-del-corso-2026"`. E apri
+`.gitignore`: il file `.env` **non c'è**. Vuol dire che se pubblichi questo repo su
+GitHub, chiunque legge la tua chiave in due clic.
+
+**Ripara**, due mosse:
+1. La chiave non sta nel codice ma in una **variabile d'ambiente**: si legge con
+   `os.getenv("API_KEY")`, e il valore vero sta nel file `.env` (che hai già).
+2. Aggiungi `.env` al `.gitignore`, così quel file **non finisce mai** nel repo.
+
+**Come verifico.** In `main.py` non c'è più nessuna chiave scritta a mano. `.env` è
+elencato nel `.gitignore`. L'app parte ancora (legge la chiave dall'ambiente).
+
+<details><summary>Serve una mano</summary>
+
+`API_KEY = os.getenv("API_KEY")` in cima, come nella soluzione, con il controllo
+"se manca, fermati". In `.gitignore`, una riga con `.env`. Il `load_dotenv()` che
+carica il file c'è già.
+</details>
+
+---
+
+## Chiusura — il giro completo
+
+Riparate tutte, rifai i cinque attacchi di fila. Devono fallire tutti:
+
+- [ ] filtro `x' OR '1'='1` → zero ticket, non tutti
+- [ ] titolo vuoto / `status: banana` → 422
+- [ ] `DELETE` senza chiave → 401
+- [ ] menu dello stato → funziona, niente 405
+- [ ] titolo `<img ...>` → si vede scritto, niente popup
+- [ ] chiave fuori dal codice, `.env` nel `.gitignore`
+
+Poi due righe: **quale falla ti ha sorpreso di più, e perché.**

@@ -1,11 +1,5 @@
-# Segreti: MAI nel repository
-.env
-
-# Database locale
-*.db
-*.sqlite
-
-# Python
 __pycache__/
 *.pyc
 .venv/
+*.db
+*.sqlite

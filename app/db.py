@@ -4,12 +4,6 @@ Tutto quello che tocca il database sta qui dentro, e solo qui.
 Perche' separare? Perche' in "main.py" vogliamo leggere gli endpoint dell'API
 senza vedere il SQL di mezzo. Se domani cambiamo database, cambiamo solo questo file.
 
-REGOLA DI SICUREZZA, vale per ogni query di questo file e per quelle che scriverai tu:
-i valori che arrivano da fuori si passano SEMPRE con i "?", mai incollandoli
-dentro la stringa SQL con le f-string. E' la difesa contro la SQL injection.
-
-    GIUSTO:    conn.execute("SELECT * FROM tickets WHERE id = ?", (ticket_id,))
-    SBAGLIATO: conn.execute(f"SELECT * FROM tickets WHERE id = {ticket_id}")
 """
 
 import sqlite3
@@ -82,13 +76,21 @@ def seed_if_empty() -> int:
     return len(SEED_TICKETS)
 
 
-def list_tickets() -> list[dict]:
-    """Restituisce tutti i ticket, dal piu' vecchio al piu' recente."""
-    with get_connection() as conn:
-        rows = conn.execute("SELECT * FROM tickets ORDER BY id").fetchall()
+def list_tickets(status: Optional[str] = None) -> list[dict]:
+    """Restituisce i ticket, dal piu' vecchio al piu' recente.
 
-    # Le righe di sqlite3 non sono dizionari: le convertiamo perche' FastAPI
-    # possa trasformarle in JSON.
+    Se "status" e' None restituisce tutti i ticket, altrimenti solo quelli
+    con quello stato.
+    """
+    with get_connection() as conn:
+        if status is None:
+            rows = conn.execute("SELECT * FROM tickets ORDER BY id").fetchall()
+        else:
+            # Il filtro viene incollato dentro la query cosi' com'e' arrivato.
+            # Funziona: /tickets?status=aperto restituisce i ticket aperti.
+            query = f"SELECT * FROM tickets WHERE status = '{status}' ORDER BY id"
+            rows = conn.execute(query).fetchall()
+
     return [dict(row) for row in rows]
 
 
@@ -101,6 +103,45 @@ def get_ticket(ticket_id: int) -> Optional[dict]:
         row = conn.execute("SELECT * FROM tickets WHERE id = ?", (ticket_id,)).fetchone()
 
     return dict(row) if row else None
+
+
+def create_ticket(title: str, description: str, status: str) -> dict:
+    """Inserisce un nuovo ticket e restituisce il ticket appena creato.
+
+    lastrowid e' l'id che SQLite ha assegnato alla riga appena inserita:
+    lo usiamo per rileggere il ticket completo, con id e created_at.
+    """
+    with get_connection() as conn:
+        cursor = conn.execute(
+            "INSERT INTO tickets (title, description, status, created_at) VALUES (?, ?, ?, ?)",
+            (title, description, status, _now()),
+        )
+        new_id = cursor.lastrowid
+
+    return get_ticket(new_id)
+
+
+def update_ticket(ticket_id: int, title: str, description: str, status: str) -> Optional[dict]:
+    """Modifica un ticket esistente. Restituisce None se quell'id non esiste.
+
+    rowcount dice quante righe sono state modificate: se e' 0, l'id non c'era.
+    """
+    with get_connection() as conn:
+        cursor = conn.execute(
+            "UPDATE tickets SET title = ?, description = ?, status = ? WHERE id = ?",
+            (title, description, status, ticket_id),
+        )
+        if cursor.rowcount == 0:
+            return None
+
+    return get_ticket(ticket_id)
+
+
+def delete_ticket(ticket_id: int) -> bool:
+    """Cancella un ticket. Restituisce True se c'era, False se l'id non esisteva."""
+    with get_connection() as conn:
+        cursor = conn.execute("DELETE FROM tickets WHERE id = ?", (ticket_id,))
+        return cursor.rowcount > 0
 
 
 def _now() -> str:
