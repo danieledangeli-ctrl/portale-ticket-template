@@ -6,7 +6,7 @@ Endpoint:
   GET    /tickets             -> lista (filtro opzionale ?status=aperto)
   GET    /tickets/{id}        -> un ticket, 404 se non c'e'
   POST   /tickets             -> crea (richiede X-API-Key)
-  PUT    /tickets/{id}        -> DA SCRIVERE
+  PUT    /tickets/{id}        -> modifica (richiede X-API-Key)
   DELETE /tickets/{id}        -> cancella (richiede X-API-Key)
 
 Al primo avvio il database viene creato e riempito con i tre ticket di esempio
@@ -16,7 +16,7 @@ Avvio:  uvicorn app.main:app --reload
 Docs:   http://127.0.0.1:8000/docs
 """
 
-from fastapi import Depends, FastAPI, Header, HTTPException, Query, Request
+from fastapi import Depends, FastAPI, Header, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 
 from app import db
@@ -69,7 +69,7 @@ def health():
 
 
 @app.get("/tickets")
-def list_tickets(status: Optional[str] = Query(default=None)):
+def list_tickets(status: Optional[TicketStatus] = Query(default=None)):
     """La lista dei ticket, eventualmente filtrata per stato."""
     return db.list_tickets(status)
 
@@ -91,25 +91,29 @@ def get_ticket(ticket_id: int):
 
 
 @app.post("/tickets", status_code=201, dependencies=[Depends(require_api_key)])
-async def create_ticket(request: Request):
+def create_ticket(ticket: TicketIn):
     """Crea un nuovo ticket.
 
-    Prende il JSON che arriva e lo salva.
+    "ticket: TicketIn" dice a FastAPI: prendi il JSON che arriva, controllalo
+    contro il modello, e se non va bene rispondi 422 senza nemmeno chiamarmi.
     """
-    dati = await request.json()
-    return db.create_ticket(
-        dati.get("title", ""),
-        dati.get("description", ""),
-        dati.get("status", "aperto"),
-    )
+    return db.create_ticket(ticket.title, ticket.description, ticket.status)
 
 
-# TODO — Manca PUT /tickets/{ticket_id}.
-# Il menu "stato" del frontend lo chiama e si prende un 405: il metodo non
-# esiste. Scriverlo e' il vostro lavoro: db.update_ticket() c'e' gia'.
+@app.put("/tickets/{ticket_id}", dependencies=[Depends(require_api_key)])
+def update_ticket(ticket_id: int, ticket: TicketIn):
+    """Sostituisce un ticket esistente con i dati che arrivano.
+
+    Stessa protezione e stesso modello di POST: cambia solo la funzione del
+    database che viene chiamata, e il 404 se quell'id non esiste.
+    """
+    aggiornato = db.update_ticket(ticket_id, ticket.title, ticket.description, ticket.status)
+    if aggiornato is None:
+        raise HTTPException(status_code=404, detail="Ticket non trovato")
+    return aggiornato
 
 
-@app.delete("/tickets/{ticket_id}", status_code=204)
+@app.delete("/tickets/{ticket_id}", status_code=204, dependencies=[Depends(require_api_key)])
 def delete_ticket(ticket_id: int):
     """Cancella un ticket. 204 vuol dire "fatto, e non ho niente da dirti"."""
     if not db.delete_ticket(ticket_id):

@@ -4,6 +4,13 @@ Tutto quello che tocca il database sta qui dentro, e solo qui.
 Perche' separare? Perche' in "main.py" vogliamo leggere gli endpoint dell'API
 senza vedere il SQL di mezzo. Se domani cambiamo database, cambiamo solo questo file.
 
+REGOLA DI SICUREZZA, vale per ogni query di questo file e per quelle che scriverai tu:
+i valori che arrivano da fuori si passano SEMPRE con i "?", mai incollandoli
+dentro la stringa SQL con le f-string. E' la difesa contro la SQL injection.
+
+    GIUSTO:    conn.execute("SELECT * FROM tickets WHERE id = ?", (ticket_id,))
+    SBAGLIATO: conn.execute(f"SELECT * FROM tickets WHERE id = {ticket_id}")
+
 """
 
 import sqlite3
@@ -86,10 +93,9 @@ def list_tickets(status: Optional[str] = None) -> list[dict]:
         if status is None:
             rows = conn.execute("SELECT * FROM tickets ORDER BY id").fetchall()
         else:
-            # Il filtro viene incollato dentro la query cosi' com'e' arrivato.
-            # Funziona: /tickets?status=aperto restituisce i ticket aperti.
-            query = f"SELECT * FROM tickets WHERE status = '{status}' ORDER BY id"
-            rows = conn.execute(query).fetchall()
+            rows = conn.execute(
+                "SELECT * FROM tickets WHERE status = ? ORDER BY id", (status,)
+            ).fetchall()
 
     return [dict(row) for row in rows]
 
