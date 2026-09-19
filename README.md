@@ -54,6 +54,10 @@ la prima domanda è sempre *"quale dei due è morto?"*.
 Servono **due terminali**: uno per l'API, uno per la pagina. Non devi ricordare i
 comandi lunghi — ci sono due scorciatoie.
 
+> **In locale** (sul tuo computer, non su Codespaces) la prima volta lancia `make setup`:
+> crea l'ambiente e installa le librerie. Su Codespaces non serve, ci sono già.
+> Se vedi `make: uvicorn: No such file or directory`, è questo che manca.
+
 **Terminale 1 — l'API.** Lascialo lì, non chiuderlo.
 
 ```bash
