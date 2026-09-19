@@ -18,13 +18,90 @@ Ogni passo ha tre momenti:
 - **Guarda** — cosa è successo, e perché.
 - **Ripara** — poche righe. Poi **riattacca**: non deve più funzionare.
 
-> **Come si avvia** (una volta sola, poi resta acceso):
-> - Backend: nel terminale, `uvicorn app.main:app --reload`
-> - Frontend: in un **secondo** terminale, `cd frontend && python3 -m http.server 5500`, poi apri `http://127.0.0.1:5500`
-> - La chiave per scrivere te la dà il docente (è scritta alla lavagna).
-
 Se ti blòcchi su un passo per più di dieci minuti, apri il triangolino **"Serve una mano"**
 in fondo al passo: ti dice **dove** guardare, non la soluzione.
+
+---
+
+## Passo 0 — Accendere il portale
+
+> **Questo passo lo facciamo insieme.** Il docente lo fa sul suo schermo, voi lo rifate
+> sul vostro. Non andate avanti da soli: se uno resta indietro qui, resta indietro tutto
+> il giorno. Alla fine del passo 0 tutti devono vedere la stessa pagina.
+
+### 0.1 — Prendere il repo
+
+Sul repo del docente, bottone verde **`Use this template`** → **`Create a new repository`**.
+
+- nome: `portale-assistenza` (o quello che volete)
+- visibilità: **Public**
+
+> **Public, non Private.** Non è una svista: domani serve. Qui dentro non c'è niente di
+> vostro e niente di vero — è materiale del corso.
+
+Poi, sul **vostro** repo appena creato: `Code` → `Codespaces` → **`Create codespace on main`**.
+Ci mette un paio di minuti: sta costruendo una macchina Linux con Python già dentro.
+
+**Come verifico:** si apre VS Code nel browser, e nell'albero a sinistra vedete `app/`,
+`frontend/`, `CONSEGNA.md`.
+
+### 0.2 — Accendere l'API (terminale 1)
+
+```bash
+uvicorn app.main:app --reload
+```
+
+**Come verifico:** compare `Application startup complete.` e il terminale **resta occupato**.
+È normale: il server è acceso e sta ascoltando. Non chiudete questo terminale, mai.
+
+In basso, nel pannello **PORTS**, è comparsa la riga **8000**.
+
+### 0.3 — Dire alla pagina dove sta l'API
+
+La pagina e l'API sono due programmi diversi. La pagina **non sa** dove sia l'API: glielo
+dite voi, e si fa in un file solo.
+
+1. pannello **PORTS**, riga **8000**, colonna **Forwarded Address**: copiate l'indirizzo
+   (è una cosa tipo `https://qualcosa-di-vostro-8000.app.github.dev`)
+2. aprite `frontend/config.js`
+3. incollatelo al posto dell'indirizzo che c'è, **senza la barra finale**
+
+```js
+const API_URL = "https://qualcosa-di-vostro-8000.app.github.dev";
+```
+
+**Come verifico:** aprite quell'indirizzo in una scheda nuova aggiungendo `/health` in
+fondo. Deve rispondere `{"status":"ok"}`. Se vedete una pagina di login di GitHub, la
+porta 8000 è privata: nel pannello PORTS, tasto destro sulla riga → **Port Visibility** →
+**Public**.
+
+### 0.4 — Accendere la pagina (terminale 2)
+
+Aprite un terminale **nuovo** (il `+` nel pannello del terminale): il primo è occupato da `uvicorn`.
+
+```bash
+cd frontend
+python3 -m http.server 5500
+```
+
+Poi nel pannello **PORTS**, riga **5500**, cliccate l'icona del **mondo**.
+
+**Come verifico:** si apre il portale. C'è il titolo "Assistenza interna", una tabella con
+**tre segnalazioni**, un menu per filtrare e un form per crearne di nuove.
+Se la tabella è vuota e in basso c'è un messaggio rosso, l'indirizzo del passo 0.3 è sbagliato.
+
+### 0.5 — Guardarlo, prima di romperlo
+
+Cinque minuti, senza scrivere niente. Provate:
+
+- cambiate il menu **"Mostra"**: l'elenco si filtra
+- create una segnalazione col form (la chiave è alla lavagna)
+- premete **F12** → scheda **Network** → ricaricate: vedete le richieste che la pagina
+  fa all'API, una per una, con il loro esito
+
+**Questa è l'applicazione che vi hanno consegnato.** Funziona. Sembra a posto.
+
+Da qui in poi lavorate da soli, un passo alla volta.
 
 ---
 
