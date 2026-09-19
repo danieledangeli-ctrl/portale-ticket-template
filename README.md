@@ -3,6 +3,10 @@
 Questo è il repo che aprono **gli studenti**. È un portale ticket **completo e funzionante**,
 con dentro cinque falle di sicurezza e un endpoint mancante, da trovare e chiudere.
 
+Tre falle e l'endpoint si chiudono il **primo giorno**, in locale. Le altre due si
+vedono il **secondo**, quando il portale è online e il repo è pubblico: prima di allora
+non farebbero male a nessuno.
+
 Le istruzioni passo-passo sono in **[`CONSEGNA.md`](./CONSEGNA.md)**.
 
 ## Come si avvia
@@ -36,7 +40,7 @@ app/            l'API (FastAPI + SQLite)
   models.py     la forma di un ticket valido
 frontend/       la pagina (HTML/CSS/JS, senza framework)
   config.js     l'UNICO posto con l'indirizzo dell'API
-.env            la chiave (vedi passo 6 della CONSEGNA…)
+.env            la chiave. Guardalo bene, e guarda il .gitignore…
 ```
 
 I dati sono di esempio e si ricreano a ogni riavvio del server.

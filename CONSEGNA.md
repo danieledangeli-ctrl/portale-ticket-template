@@ -8,6 +8,11 @@ Sembra a posto. Non lo è. Dentro ci sono **cinque punti deboli** e **un pezzo m
 Il tuo lavoro non è costruire da zero: è quello che si fa davvero in azienda, cioè
 prendere codice che gira, capire dove è fragile, e ripararlo.
 
+**Oggi ne chiudi tre e scrivi il pezzo che manca.** Sono i tre che vivono dentro il
+server: ci si arriva da qui, dal tuo computer, senza bisogno di altro.
+Gli altri due restano aperti apposta: fanno male solo quando il portale è **online e
+pubblico**, e domani lo sarà. Colpirli oggi, in locale, sarebbe sparare a salve.
+
 Ogni passo ha tre momenti:
 - **Attacca** — fai il danno con le tue mani, così vedi che il buco è vero.
 - **Guarda** — cosa è successo, e perché.
@@ -141,70 +146,26 @@ def update_ticket(ticket_id: int, ticket: TicketIn):
 
 ---
 
-## Passo 5 — Il dato che diventa codice (XSS)
-
-**Attacca.** Crea una segnalazione con questo **titolo** esatto:
-
-```
-<img src=x onerror="alert('bucato')">
-```
-
-**Guarda.** Appena l'elenco si ricarica, parte un popup. Tu volevi scrivere un titolo,
-e il browser ha eseguito il tuo testo come **codice**. Immagina che al posto di
-`alert` ci fosse qualcosa che ruba la sessione di chi apre la pagina. Apri
-`frontend/app.js`, `costruisciRiga`: il titolo viene messo nella pagina con `innerHTML`,
-che dice al browser "questo è HTML, eseguilo".
-
-**Ripara.** Il titolo e la descrizione vanno messi con `textContent`, che dice al
-browser "questo è **testo**, mostralo e basta". Serve creare i due `<div>` a mano e
-riempirli con `textContent` invece di comporre una stringa di HTML.
-
-**Riattacca.** Ricarica: quel ticket ora si **vede scritto**, `<img ...>` compreso,
-e nessun popup. Il dato è tornato a essere un dato.
-
-<details><summary>Serve una mano</summary>
-
-`frontend/app.js`, dentro `costruisciRiga`, il blocco `cellaTesto.innerHTML = ...`.
-Sostituiscilo creando due `div` (`document.createElement("div")`), dando a ciascuno
-la sua classe (`cella-titolo`, `cella-descrizione`) e assegnando `.textContent = ticket.title`
-e `.textContent = ticket.description`. Confronta con la soluzione del docente.
-</details>
-
----
-
-## Passo 6 — Il segreto che non è segreto
-
-**Guarda** (questo è da leggere, non da attaccare). Apri `app/main.py`: la chiave è
-**scritta lì dentro**, in chiaro: `API_KEY = "chiave-del-corso-2026"`. E apri
-`.gitignore`: il file `.env` **non c'è**. Vuol dire che se pubblichi questo repo su
-GitHub, chiunque legge la tua chiave in due clic.
-
-**Ripara**, due mosse:
-1. La chiave non sta nel codice ma in una **variabile d'ambiente**: si legge con
-   `os.getenv("API_KEY")`, e il valore vero sta nel file `.env` (che hai già).
-2. Aggiungi `.env` al `.gitignore`, così quel file **non finisce mai** nel repo.
-
-**Come verifico.** In `main.py` non c'è più nessuna chiave scritta a mano. `.env` è
-elencato nel `.gitignore`. L'app parte ancora (legge la chiave dall'ambiente).
-
-<details><summary>Serve una mano</summary>
-
-`API_KEY = os.getenv("API_KEY")` in cima, come nella soluzione, con il controllo
-"se manca, fermati". In `.gitignore`, una riga con `.env`. Il `load_dotenv()` che
-carica il file c'è già.
-</details>
-
----
-
 ## Chiusura — il giro completo
 
-Riparate tutte, rifai i cinque attacchi di fila. Devono fallire tutti:
+Riparate tutte, rifai i quattro attacchi di fila. Devono fallire tutti:
 
 - [ ] filtro `x' OR '1'='1` → zero ticket, non tutti
 - [ ] titolo vuoto / `status: banana` → 422
 - [ ] `DELETE` senza chiave → 401
 - [ ] menu dello stato → funziona, niente 405
-- [ ] titolo `<img ...>` → si vede scritto, niente popup
-- [ ] chiave fuori dal codice, `.env` nel `.gitignore`
 
 Poi due righe: **quale falla ti ha sorpreso di più, e perché.**
+
+---
+
+## Quello che resta aperto (e non è una dimenticanza)
+
+Due punti deboli sono ancora lì, e li vedrai **domani**:
+
+- prova a creare una segnalazione col titolo `<img src=x onerror="alert('ciao')">`
+  e guarda cosa fa la pagina;
+- apri `app/main.py` e cerca la chiave. Poi apri `.gitignore` e cerca `.env`.
+
+Non ripararli oggi. Domani il portale va online, con un indirizzo vero e un repo
+pubblico: è lì che questi due smettono di essere esercizi.
