@@ -114,6 +114,37 @@ Codespace, che gira altrove. Devi metterci l'indirizzo vero della porta 8000:
 
 ---
 
+## Se qualcosa non va
+
+I due-tre errori che capitano davvero, e come si chiudono.
+
+**`Address already in use`** (di solito sulla 8000)
+Quel server è **già acceso** in un altro terminale. O usi quello, oppure lo chiudi e
+rilanci:
+```bash
+pkill -f uvicorn        # chiude l'API rimasta accesa
+make backend            # e la riaccende
+```
+Per la pagina (porta 5500) è lo stesso con `pkill -f http.server`.
+Due programmi non possono ascoltare sulla stessa porta: è anche il motivo per cui
+l'API sta sulla 8000 e la pagina sulla 5500.
+
+**La pagina dice "non riesco a contattare il server"**
+Quasi sempre `frontend/config.js` (vedi sopra): punta ancora a `127.0.0.1`, oppure la
+porta 8000 nel pannello **PORTS** è **Private**. Dopo averlo sistemato, ricarica con
+**Ctrl/Cmd + Shift + R**.
+
+**`Attribute "main:app" not found`** avviando a mano
+Hai scritto `app:main:app`. Il modo giusto è `app.main:app` (un punto, poi due punti) —
+ma con `make backend` non ci pensi.
+
+**Il portale non risponde più dopo una pausa**
+Il Codespace si **ferma da solo** dopo mezz'ora di inattività. Riaprilo da
+[github.com/codespaces](https://github.com/codespaces), poi di nuovo `make backend` e
+`make frontend`.
+
+---
+
 ## Cosa c'è dentro
 
 ```
