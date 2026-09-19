@@ -15,6 +15,7 @@ codice vero — e un pezzo che manca. Il tuo lavoro per due giorni è trovarli e
 > che gira, scritto da altri, e devi capire dove è fragile prima che lo capisca qualcun altro.
 
 **Le istruzioni passo per passo sono in [`CONSEGNA.md`](./CONSEGNA.md).** Parti da lì.
+Il secondo giorno si continua con [`CONSEGNA_GIORNO_2.md`](./CONSEGNA_GIORNO_2.md).
 
 ---
 
@@ -95,6 +96,9 @@ frontend/       la pagina (HTML/CSS/JS, senza framework)
   config.js     l'UNICO posto con l'indirizzo dell'API
 .env            la chiave. Guardalo bene. E guarda il .gitignore…
 requirements.txt  le librerie che servono
+
+CONSEGNA.md            il primo giorno
+CONSEGNA_GIORNO_2.md   il secondo
 ```
 
 I dati sono di esempio e si ricreano da soli a ogni avvio: puoi rompere tutto senza paura.
@@ -108,3 +112,4 @@ quelle che si vedono da qui, dal tuo Codespace.
 
 **Domani** il portale va **online**, con un indirizzo vero e un repo pubblico. Lì si
 chiudono le altre due: in locale non farebbero male a nessuno, e capirai perché.
+Le istruzioni sono in [`CONSEGNA_GIORNO_2.md`](./CONSEGNA_GIORNO_2.md).

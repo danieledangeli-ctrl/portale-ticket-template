@@ -246,3 +246,6 @@ Due punti deboli sono ancora lì, e li vedrai **domani**:
 
 Non ripararli oggi. Domani il portale va online, con un indirizzo vero e un repo
 pubblico: è lì che questi due smettono di essere esercizi.
+
+Le istruzioni del secondo giorno sono già qui, in
+[`CONSEGNA_GIORNO_2.md`](./CONSEGNA_GIORNO_2.md). Aprilo domani mattina.
