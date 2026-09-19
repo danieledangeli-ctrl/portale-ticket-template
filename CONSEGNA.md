@@ -48,11 +48,14 @@ Ci mette un paio di minuti: sta costruendo una macchina Linux con Python già de
 ### 0.2 — Accendere l'API (terminale 1)
 
 ```bash
-uvicorn app.main:app --reload
+make backend
 ```
 
 **Come verifico:** compare `Application startup complete.` e il terminale **resta occupato**.
 È normale: il server è acceso e sta ascoltando. Non chiudete questo terminale, mai.
+
+> `make backend` è una scorciatoia: dentro lancia `uvicorn app.main:app --reload`. Scriverlo
+> a mano è facile da sbagliare (i punti e i due punti vanno al posto giusto), così non serve.
 
 In basso, nel pannello **PORTS**, è comparsa la riga **8000**.
 
@@ -77,11 +80,10 @@ porta 8000 è privata: nel pannello PORTS, tasto destro sulla riga → **Port Vi
 
 ### 0.4 — Accendere la pagina (terminale 2)
 
-Aprite un terminale **nuovo** (il `+` nel pannello del terminale): il primo è occupato da `uvicorn`.
+Aprite un terminale **nuovo** (il `+` nel pannello del terminale): il primo è occupato dall'API.
 
 ```bash
-cd frontend
-python3 -m http.server 5500
+make frontend
 ```
 
 Poi nel pannello **PORTS**, riga **5500**, cliccate l'icona del **mondo**.

@@ -21,8 +21,8 @@ Stesso metodo di ieri: **attacca → guarda → ripara → riattacca**.
 > portale. Non è un voto: è che da qui in poi i passi danno per scontato che ieri sia
 > a posto.
 
-Accendi i due server come ieri (`uvicorn` nel primo terminale, `http.server` nel
-secondo) e apri un **terzo** terminale. Incolla i quattro comandi **tutti insieme**:
+Accendi i due server come ieri: `make backend` nel primo terminale, `make frontend`
+nel secondo. Poi apri un **terzo** terminale. Incolla i quattro comandi **tutti insieme**:
 
 ```bash
 echo "1. filtro:  $(curl -s -o /dev/null -w '%{http_code}' -G 'http://127.0.0.1:8000/tickets' --data-urlencode "status=x' OR '1'='1")  (deve dire 422)"
@@ -46,8 +46,8 @@ git checkout origin/g1-riparato -- app/db.py app/main.py
 > completa. Se avevi riparato qualcosa, il tuo lavoro in quei due file viene perso —
 > è il senso del recupero. Il resto del repo non si tocca.
 
-`uvicorn --reload` si riavvia da solo. Rilancia i quattro comandi: ora devono essere
-tutti verdi.
+L'API (`make backend`) si riavvia da sola quando i file cambiano. Rilancia i quattro
+comandi: ora devono essere tutti verdi.
 
 **Come verifico:** 422 · 422 · 401 · 200.
 
@@ -326,8 +326,8 @@ Nel file `.env` aggiungi una riga con un'origine che **non è la tua**:
 ALLOWED_ORIGINS=https://un-sito-che-non-e-la-mia-pagina.it
 ```
 
-Ferma `uvicorn` con `CTRL+C` e riavvialo: le variabili d'ambiente si leggono **all'avvio**,
-`--reload` non basta.
+Ferma l'API con `CTRL+C` nel suo terminale e rilancia `make backend`: le variabili
+d'ambiente si leggono **all'avvio**, il riavvio automatico non basta.
 
 Ricarica la pagina.
 
@@ -356,7 +356,7 @@ finale** e senza `/index.html`:
 ALLOWED_ORIGINS=https://qualcosa-di-tuo-5500.app.github.dev
 ```
 
-Riavvia `uvicorn`, ricarica.
+Rilancia `make backend`, ricarica.
 
 **Come verifico:** la tabella si riempie. Nel tab Network, nella risposta, c'è l'header
 `access-control-allow-origin` con l'indirizzo della tua pagina.
@@ -422,7 +422,7 @@ Ora apri `.gitignore`. Cerca `.env`. **Non c'è.** Quindi anche quel file è nel
    ```
    Il `load_dotenv()` che legge il file `.env` c'è già, in cima.
 3. Nel tuo `.env`, che ora è ignorato, aggiungi `API_KEY=chiave-del-corso-2026`.
-   Riavvia `uvicorn`: l'app riparte e funziona come prima.
+   Rilancia `make backend`: l'app riparte e funziona come prima.
 
 **Secondo tempo — il presente.** Il file è ancora dentro git.
 
@@ -452,7 +452,7 @@ presente, ma la storia dei commit resta pubblica e chiunque la può leggere.
 L'unica riparazione vera è **cambiare la chiave**:
 
 1. scegline una nuova, tua, e mettila nel `.env` al posto di quella vecchia
-2. riavvia `uvicorn`
+2. rilancia `make backend`
 3. prova a creare un ticket dalla pagina con la chiave **vecchia** → **401**.
    Con quella nuova → **201**
 

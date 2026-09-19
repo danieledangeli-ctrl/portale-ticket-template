@@ -51,22 +51,28 @@ la prima domanda è sempre *"quale dei due è morto?"*.
 
 ## Accenderlo
 
+Servono **due terminali**: uno per l'API, uno per la pagina. Non devi ricordare i
+comandi lunghi — ci sono due scorciatoie.
+
 **Terminale 1 — l'API.** Lascialo lì, non chiuderlo.
 
 ```bash
-uvicorn app.main:app --reload
+make backend
 ```
 
 Deve comparire `Application startup complete`. La documentazione automatica dell'API
 è su `/docs`: lì puoi provare ogni endpoint senza scrivere codice.
 
 **Terminale 2 — la pagina.** Aprine uno **nuovo** (in VS Code: il `+` nel pannello del
-terminale). Il primo resta occupato da `uvicorn`.
+terminale). Il primo resta occupato dall'API.
 
 ```bash
-cd frontend
-python3 -m http.server 5500
+make frontend
 ```
+
+`make` senza altro ti ricorda cosa fanno i due comandi. (Dietro le quinte sono
+`uvicorn app.main:app --reload` e `python3 -m http.server 5500`: se vuoi vederli,
+apri il `Makefile`.)
 
 **Poi apri la pagina.** Su Codespaces: pannello **PORTS**, riga della porta **5500**,
 clicca sull'icona del mondo. In locale: `http://127.0.0.1:5500`.
@@ -75,10 +81,36 @@ clicca sull'icona del mondo. In locale: `http://127.0.0.1:5500`.
 > chiamate all'API per sicurezza, e vedi una pagina vuota senza capire perché.
 > Serve il server del terminale 2.
 
-> ⚠️ **Prima che la pagina mostri qualcosa devi dirle dove sta l'API**: si fa in
-> `frontend/config.js`, ed è scritto lì dentro cosa mettere. È il passo 0 della consegna.
-
 **La chiave** per creare, modificare ed eliminare te la dà il docente (è alla lavagna).
+
+---
+
+## Dì alla pagina dove sta l'API — `frontend/config.js`
+
+La pagina e l'API sono due programmi separati: la pagina **non sa** dove trovare l'API
+finché non glielo dici tu. Si fa in un punto solo, `frontend/config.js`, ultima riga.
+
+**In locale** (sul tuo computer) va già bene com'è:
+
+```js
+const API_URL = "http://127.0.0.1:8000";
+```
+
+**Su Codespaces** quell'indirizzo, letto dal tuo browser, è il *tuo* computer — non il
+Codespace, che gira altrove. Devi metterci l'indirizzo vero della porta 8000:
+
+1. pannello **PORTS**, riga **8000**, colonna **Forwarded Address** → copia l'indirizzo
+   (è tipo `https://qualcosa-8000.app.github.dev`)
+2. incollalo in `config.js`, **senza barra finale**:
+   ```js
+   const API_URL = "https://qualcosa-8000.app.github.dev";
+   ```
+3. ricarica la pagina con **Ctrl/Cmd + Shift + R** — una ricarica normale tiene in
+   cache il vecchio `config.js` e sembra che non sia cambiato niente.
+
+> Se la pagina dice *"non riesco a contattare il server"*, il 99% delle volte è questo:
+> `config.js` punta ancora a `127.0.0.1`, oppure la porta 8000 nel pannello PORTS è
+> **Private** (aprila: tasto destro → Port Visibility → Public).
 
 ---
 
@@ -96,6 +128,7 @@ frontend/       la pagina (HTML/CSS/JS, senza framework)
   config.js     l'UNICO posto con l'indirizzo dell'API
 .env            la chiave. Guardalo bene. E guarda il .gitignore…
 requirements.txt  le librerie che servono
+Makefile          le scorciatoie: make backend, make frontend
 
 CONSEGNA.md            il primo giorno
 CONSEGNA_GIORNO_2.md   il secondo
