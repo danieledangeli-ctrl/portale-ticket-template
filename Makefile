@@ -34,4 +34,4 @@ backend:
 
 # La pagina (un server statico). Da file:// il browser blocca le chiamate: serve questo.
 frontend:
-	cd frontend && $(PY) -m http.server 5500
+	$(PY) -m http.server 5500 --directory frontend
