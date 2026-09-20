@@ -19,6 +19,22 @@ Il secondo giorno si continua con [`CONSEGNA_GIORNO_2.md`](./CONSEGNA_GIORNO_2.m
 
 ---
 
+## La mattina: i notebook Colab (giorno 1)
+
+La mattina del primo giorno non serve questo repo: serve solo il browser. Clicca,
+premi **Copia in Drive**, esegui dall'alto in basso con **Shift+Invio**.
+
+| Notebook | Apri in Colab |
+|----------|---------------|
+| 00 · Setup (2 min) | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/danieledangeli-ctrl/portale-ticket-template/blob/main/colab/00_setup_colab.ipynb) |
+| G1_01 · HTTP con le mani (45 min) | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/danieledangeli-ctrl/portale-ticket-template/blob/main/colab/G1/G1_01_http_con_le_mani.ipynb) |
+| G1_02 · Dati che si difendono (45 min) | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/danieledangeli-ctrl/portale-ticket-template/blob/main/colab/G1/G1_02_dati_che_si_difendono.ipynb) |
+| G1_03 · Database e injection (60 min) | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/danieledangeli-ctrl/portale-ticket-template/blob/main/colab/G1/G1_03_database_e_injection.ipynb) |
+
+La chiave per le celle di scrittura te la dà il docente (è alla lavagna).
+
+---
+
 ## Sono due programmi, non uno
 
 Questa è la cosa da capire prima di toccare qualsiasi tasto.
